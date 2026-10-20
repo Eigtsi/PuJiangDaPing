@@ -1,0 +1,6 @@
+{
+  "name": "Industrial Park Dashboard",
+  "description": "An integrated management cockpit for monitoring industrial park metrics such as air quality, water environment, and enterprise status.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
