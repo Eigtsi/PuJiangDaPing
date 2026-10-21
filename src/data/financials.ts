@@ -278,3 +278,109 @@ export const monthlyRevenues: MonthlyRevenue[] = [
   { month: '2025-11', rent: 98.2,  property: 24.8, utility: 44.3, solidWaste: 9.0,  parking: 3.4, total: 179.7 },
   { month: '2025-12', rent: 89.6,  property: 25.2, utility: 36.7, solidWaste: 11.2, parking: 3.7, total: 166.4 }
 ]
+
+// ---------------------------------------------------------------------------
+// 年租金按标的物类型构成（年度口径，合计 = 1245.8万，与 zoneRevenues.total.rent 一致）
+// 来源：智能租金计费引擎 5 类标的物（厂房/仓库/综合楼/宿舍楼/营业房）年租金汇总
+// ---------------------------------------------------------------------------
+
+export interface AssetTypeRent {
+  type: string  // '厂房' | '仓库' | '综合楼' | '宿舍楼' | '营业房'
+  rent: number  // 万元/年
+}
+
+export const rentByAssetType: AssetTypeRent[] = [
+  { type: '厂房', rent: 560.0 },
+  { type: '仓库', rent: 210.0 },
+  { type: '综合楼', rent: 260.0 },
+  { type: '宿舍楼', rent: 120.0 },
+  { type: '营业房', rent: 95.8 }
+]
+
+// ---------------------------------------------------------------------------
+// 物业费单价标准（元/年/㎡，年度口径，依据《2025年〔9〕号关于2026年度租金等费用收缴方案的通知》）
+// 厂房 15 / 综合楼 8 / 宿舍楼 12 / 营业房 8 / 仓库 8
+// ---------------------------------------------------------------------------
+
+export interface PropertyFeeStandard {
+  type: string   // 标的物类型
+  price: number  // 物业费单价（元/年/㎡）
+}
+
+export const propertyFeeStandards: PropertyFeeStandard[] = [
+  { type: '厂房', price: 15 },
+  { type: '综合楼', price: 8 },
+  { type: '宿舍楼', price: 12 },
+  { type: '营业房', price: 8 },
+  { type: '仓库', price: 8 }
+]
+
+// ---------------------------------------------------------------------------
+// 年度财务画像（租金/物业费/停车费按「年度」计费）
+// 2025 为实际基准，2026 依据《2025年〔9〕号关于2026年度租金等费用收缴方案的通知》估算
+// ---------------------------------------------------------------------------
+
+export type FiscalYear = '2025' | '2026'
+
+export interface YearZoneRevenue {
+  zone: 'east' | 'center' | 'west' | 'total'
+  rent: number       // 万元/年
+  property: number   // 万元/年
+  parking: number    // 万元/年
+  collectionRate: number // 综合收缴率 %
+}
+
+export interface YearFinancialProfile {
+  year: FiscalYear
+  label: string
+  zones: YearZoneRevenue[]
+  rentByType: AssetTypeRent[]                    // 年租金按标的物类型构成
+  parking: { totalSpaces: number; occupiedSpaces: number }
+  monthlyParking: number[]                       // 12 个月停车费（万元）
+}
+
+export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
+  '2025': {
+    year: '2025',
+    label: '2025年',
+    zones: [
+      { zone: 'east',   rent: 412.6, property: 103.8, parking: 18.2, collectionRate: 98.9 },
+      { zone: 'center', rent: 502.3, property: 126.5, parking: 15.6, collectionRate: 99.4 },
+      { zone: 'west',   rent: 330.9, property: 82.1,  parking: 11.2, collectionRate: 98.1 },
+      { zone: 'total',  rent: 1245.8, property: 312.4, parking: 45.0, collectionRate: 99.0 }
+    ],
+    rentByType: [
+      { type: '厂房', rent: 560.0 },
+      { type: '仓库', rent: 210.0 },
+      { type: '综合楼', rent: 260.0 },
+      { type: '宿舍楼', rent: 120.0 },
+      { type: '营业房', rent: 95.8 }
+    ],
+    parking: { totalSpaces: 1260, occupiedSpaces: 897 },
+    monthlyParking: [3.2, 2.8, 3.5, 3.8, 4.0, 4.2, 4.5, 4.3, 3.9, 3.7, 3.4, 3.7]
+  },
+  '2026': {
+    year: '2026',
+    label: '2026年',
+    zones: [
+      { zone: 'east',   rent: 433.2, property: 108.0, parking: 19.1, collectionRate: 98.2 },
+      { zone: 'center', rent: 527.4, property: 131.6, parking: 16.4, collectionRate: 99.0 },
+      { zone: 'west',   rent: 347.5, property: 85.3,  parking: 11.8, collectionRate: 97.5 },
+      { zone: 'total',  rent: 1308.1, property: 324.9, parking: 47.3, collectionRate: 98.5 }
+    ],
+    rentByType: [
+      { type: '厂房', rent: 588.0 },
+      { type: '仓库', rent: 220.5 },
+      { type: '综合楼', rent: 273.0 },
+      { type: '宿舍楼', rent: 126.0 },
+      { type: '营业房', rent: 100.6 }
+    ],
+    parking: { totalSpaces: 1380, occupiedSpaces: 1010 },
+    monthlyParking: [3.4, 3.0, 3.7, 4.0, 4.2, 4.4, 4.7, 4.5, 4.1, 3.9, 3.6, 3.9]
+  }
+}
+
+export const yearOptions: { key: FiscalYear; label: string }[] = [
+  { key: '2025', label: '2025年' },
+  { key: '2026', label: '2026年' }
+]

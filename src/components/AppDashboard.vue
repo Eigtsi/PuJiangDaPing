@@ -99,23 +99,24 @@
         <template #icon><component :is="panelIcons[1]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[1]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel :title="panelTitles[2]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="expandedIndex = 2">
+      <TechPanel v-if="panelComponents[2]" :title="panelTitles[2]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="expandedIndex = 2">
         <template #icon><component :is="panelIcons[2]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[2]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
+      <div v-else class="flex-1 min-h-0"></div>
     </div>
 
     <!-- ============ 右侧悬浮浮层（叠在地图右边缘，重点展示） ============ -->
     <div class="absolute right-[120px] top-[96px] bottom-5 z-20 w-[420px] flex flex-col gap-3 pl-1 min-h-0">
-      <TechPanel :title="panelTitles[3]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 3">
+      <TechPanel v-if="panelComponents[3]" :title="panelTitles[3]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" :autoHeight="activeMainTab === 'environment'" @expand="expandedIndex = 3">
         <template #icon><component :is="panelIcons[3]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[3]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel :title="panelTitles[4]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 4">
+      <TechPanel v-if="panelComponents[4]" :title="panelTitles[4]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 4">
         <template #icon><component :is="panelIcons[4]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[4]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel :title="panelTitles[5]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 5">
+      <TechPanel v-if="panelComponents[5]" :title="panelTitles[5]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 5">
         <template #icon><component :is="panelIcons[5]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[5]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
@@ -174,8 +175,8 @@ import 'moment/dist/locale/zh-cn'
 import CryptoJS from 'crypto-js'
 import {
   Building, Droplets, Wind, Calendar, Sun, ArrowLeftRight,
-  Trash2, MapPin, TrendingUp, Sliders, Shield, Briefcase, LayoutDashboard,
-  Bell, Leaf, AlertTriangle, Gauge, Coins, Factory, FileText, LifeBuoy, Users, X,
+  Trash2, Sliders, Shield, Briefcase, LayoutDashboard,
+  Bell, Coins, Car, LifeBuoy, Users, X,
   Zap, Flame, Waves
 } from 'lucide-vue-next'
 
@@ -187,35 +188,18 @@ import EnterpriseSlidePanel from './map/EnterpriseSlidePanel.vue'
 
 // ===== Panel imports — General =====
 import ParkOverviewContent from './panels/general/ParkOverviewContent.vue'
-import AirQualityContent from './panels/general/AirQualityContent.vue'
 import SolidWasteContent from './panels/general/SolidWasteContent.vue'
 import AirMonitorContent from './panels/general/AirMonitorContent.vue'
 import WaterEnvContent from './panels/general/WaterEnvContent.vue'
 import WaterUsageContent from './panels/general/WaterUsageContent.vue'
 import ElectricityUsageContent from './panels/general/ElectricityUsageContent.vue'
 import GasUsageContent from './panels/general/GasUsageContent.vue'
-// ===== Panel imports — Environment =====
-import PollutionSourceContent from './panels/environment/PollutionSourceContent.vue'
-import MonitoringPointsContent from './panels/environment/MonitoringPointsContent.vue'
-import AlertConsoleContent from './panels/environment/AlertConsoleContent.vue'
-import DischargeWaterContent from './panels/environment/DischargeWaterContent.vue'
-import PollutantCapContent from './panels/environment/PollutantCapContent.vue'
-
 // ===== Panel imports — Operation =====
-import AssetOverviewContent from './panels/operation/AssetOverviewContent.vue'
-import LeaseManageContent from './panels/operation/LeaseManageContent.vue'
-import RevenueBreakdownContent from './panels/operation/RevenueBreakdownContent.vue'
-import RevenueByZoneContent from './panels/operation/RevenueByZoneContent.vue'
-import MonthlyRevenueContent from './panels/operation/MonthlyRevenueContent.vue'
-import GreenLowCarbonContent from './panels/operation/GreenLowCarbonContent.vue'
-import ContractDetailContent from './panels/operation/ContractDetailContent.vue'
+import PropertyAnalysisContent from './panels/operation/PropertyAnalysisContent.vue'
+import RentAnalysisContent from './panels/operation/RentAnalysisContent.vue'
+import ParkingAnalysisContent from './panels/operation/ParkingAnalysisContent.vue'
 // ===== Panel imports — Energy =====
-import ServiceOverviewContent from './panels/energy/ServiceOverviewContent.vue'
-import DirectHelpContent from './panels/energy/DirectHelpContent.vue'
-import EmploymentContent from './panels/energy/EmploymentContent.vue'
-import EnterpriseArchiveContent from './panels/energy/EnterpriseArchiveContent.vue'
-import UnifiedBillingContent from './panels/energy/UnifiedBillingContent.vue'
-import BusinessReminderContent from './panels/energy/BusinessReminderContent.vue'
+import EmptyContent from './panels/energy/EmptyContent.vue'
 
 // ==================== ASSETS ====================
 const industrialParkView = '/src/assets/images/industrial_park_view_1779843805340.png'
@@ -280,8 +264,6 @@ const setCategory = (cat: 'park' | 'enterprise') => {
 }
 const setMainTab = (tab: TabKey) => {
   store.commit('setMainTab', tab)
-  const names: Record<string, string> = { general: '综合管理面', environment: '环保管理数据面', operation: '智慧运营数据面', energy: '企业服务数据面' }
-  toastMessage(`切换至：${names[tab]}`)
 }
 const setWaterRiver = (river: 'tongcungang' | 'xinjinghe') => {
   store.commit('setWaterRiver', river)
@@ -301,9 +283,9 @@ const panelTitles = computed(() => {
   const t = activeMainTab.value
   const titles: Record<string, string[]> = {
     general: ['园区概况', '大气环境监测', '水环境监测', '用水分析', '用电分析', '供气分析'],
-    environment: ['污染源实时监控', '监测点位及状态分布', '异常数据及集成预警', '环境空气质量监测', '污染物总量控制', '排口及地表水达标监测', '固废处置监管'],
-    operation: ['资产与运营概况', '房屋租赁与合同管理', '收入构成与收缴统计', '分区域租金收益统计', '月度收入趋势', '绿色低碳推进', '契约与入驻资产明细'],
-    energy: ['智慧企业服务概况', '业务提醒', '统一核算代缴', '诉求解决直报通道', '用工需求态势', '企业全景档案', ''],
+    environment: ['大气环境监测', '水环境监测', '', '固废处置监管', '', '', ''],
+    operation: ['物业分析', '租金分析', '停车分析', '用水分析', '用电分析', '供气分析', ''],
+    energy: ['', '', '', '', '', '', ''],
   }
   return titles[t] || titles.general
 })
@@ -312,8 +294,8 @@ const panelIcons = computed(() => {
   const t = activeMainTab.value
   const icons: Record<string, any[]> = {
     general: [Building, Wind, Droplets, Waves, Zap, Flame],
-    environment: [Factory, MapPin, AlertTriangle, Wind, Gauge, Droplets, Trash2],
-    operation: [Building, Briefcase, Coins, MapPin, TrendingUp, Leaf, FileText],
+    environment: [Wind, Droplets, null, Trash2, null, null, null],
+    operation: [Building, Coins, Car, Waves, Zap, Flame, null],
     energy: [Briefcase, Bell, Coins, LifeBuoy, Users, Building, Building],
   }
   return icons[t] || icons.general
@@ -325,17 +307,17 @@ const panelComponents = computed(() => {
   const t = activeMainTab.value
   const map: Record<string, any[]> = {
     general: [ParkOverviewContent, AirMonitorContent, WaterEnvContent, WaterUsageContent, ElectricityUsageContent, GasUsageContent],
-    environment: [PollutionSourceContent, MonitoringPointsContent, AlertConsoleContent, AirQualityContent, PollutantCapContent, DischargeWaterContent, SolidWasteContent],
-    operation: [AssetOverviewContent, LeaseManageContent, RevenueBreakdownContent, RevenueByZoneContent, MonthlyRevenueContent, GreenLowCarbonContent, ContractDetailContent],
-    energy: [ServiceOverviewContent, BusinessReminderContent, UnifiedBillingContent, DirectHelpContent, EmploymentContent, EnterpriseArchiveContent, null],
+    environment: [AirMonitorContent, WaterEnvContent, null, SolidWasteContent, null, null, null],
+    operation: [PropertyAnalysisContent, RentAnalysisContent, ParkingAnalysisContent, WaterUsageContent, ElectricityUsageContent, GasUsageContent, null],
+    energy: [EmptyContent, EmptyContent, EmptyContent, EmptyContent, EmptyContent, EmptyContent, null],
   }
   return map[t] || map.general
 })
 
-// 右侧面板在「环保管理」页高亮描边
+// 右侧面板在「环保管理」页高亮描边；环保页只有固废处置监管一个面板，按内容自适应高度
 const rightPanelClass = computed(() =>
   activeMainTab.value === 'environment'
-    ? 'flex-1 min-h-0 !border-cyan-400/80 shadow-[0_0_12px_rgba(6,182,212,0.4)] bg-[#0c245c]/70'
+    ? '!border-cyan-400/80 shadow-[0_0_12px_rgba(6,182,212,0.4)] bg-[#0c245c]/70'
     : 'flex-1 min-h-0'
 )
 

@@ -1,7 +1,7 @@
 <template>
   <div :class="['font-sans', isLargeScreen ? 'space-y-2' : 'space-y-3.5']">
     <div class="flex justify-between items-center">
-      <span class="text-xs text-slate-200 font-semibold">固废及危废中转概况</span>
+      <span class="text-xs text-slate-200 font-bold">固废及危废中转概况</span>
       <el-select
         v-model="selectedYear"
         size="small"
@@ -18,20 +18,20 @@
     <div :class="['bg-gradient-to-r from-[#0d2a63]/25 to-[#0b2152]/10 rounded border border-cyan-500/10', isLargeScreen ? 'p-1.5' : 'p-2.5']">
       <div class="flex justify-between text-xs text-cyan-300 font-bold mb-1">
         <span>📦 工业固废（水晶副产料）</span>
-        <span class="text-[10px] text-emerald-400">闭环回收</span>
+        <span class="text-[11px] text-emerald-400">闭环回收</span>
       </div>
       <div class="grid grid-cols-3 text-center text-xs text-slate-300 font-mono gap-1">
         <div class="bg-[#051330]/80 p-1 rounded border border-cyan-500/5">
-          <span class="text-[10px] text-slate-400 block font-sans">总产量</span>
-          <span :class="[isLargeScreen ? 'text-xs' : 'text-sm', 'font-bold text-cyan-400']">{{ wastes.solidTotal }}</span>
+          <span class="text-xs text-slate-400 block font-sans">总产量</span>
+          <span :class="[isLargeScreen ? 'text-base' : 'text-lg', 'font-black text-cyan-400']">{{ wastes.solidTotal }}</span>
         </div>
         <div class="bg-[#051330]/80 p-1 rounded border border-cyan-500/5">
-          <span class="text-[10px] text-slate-400 block font-sans">收运中转</span>
-          <span :class="[isLargeScreen ? 'text-xs' : 'text-sm', 'font-bold text-sky-300']">{{ wastes.solidTransferred }}</span>
+          <span class="text-xs text-slate-400 block font-sans">收运中转</span>
+          <span :class="[isLargeScreen ? 'text-base' : 'text-lg', 'font-black text-sky-300']">{{ wastes.solidTransferred }}</span>
         </div>
         <div class="bg-[#051330]/80 p-1 rounded border border-cyan-500/5">
-          <span class="text-[10px] text-slate-400 block font-sans">库存</span>
-          <span :class="[isLargeScreen ? 'text-xs' : 'text-sm', 'font-bold text-amber-500']">{{ wastes.solidStored }}</span>
+          <span class="text-xs text-slate-400 block font-sans">库存</span>
+          <span :class="[isLargeScreen ? 'text-base' : 'text-lg', 'font-black text-amber-500']">{{ wastes.solidStored }}</span>
         </div>
       </div>
     </div>
@@ -40,41 +40,41 @@
     <div :class="['bg-gradient-to-r from-[#0d2a63]/25 to-[#0b2152]/10 rounded border border-rose-500/10', isLargeScreen ? 'p-1.5' : 'p-2.5']">
       <div class="flex justify-between text-xs text-rose-300 font-bold mb-1">
         <span>☣️ 危险废物（废酸泥泥）</span>
-        <span class="text-[10px] text-rose-400">特种监管</span>
+        <span class="text-[11px] text-rose-400">特种监管</span>
       </div>
       <div class="grid grid-cols-3 text-center text-xs text-slate-300 font-mono gap-1">
         <div class="bg-[#051330]/80 p-1 rounded border border-rose-500/5">
-          <span class="text-[10px] text-slate-400 block font-sans">总产生</span>
-          <span :class="[isLargeScreen ? 'text-xs' : 'text-sm', 'font-bold text-rose-300']">{{ wastes.hazardTotal }}</span>
+          <span class="text-xs text-slate-400 block font-sans">总产生</span>
+          <span :class="[isLargeScreen ? 'text-base' : 'text-lg', 'font-black text-rose-300']">{{ wastes.hazardTotal }}</span>
         </div>
         <div class="bg-[#051330]/80 p-1 rounded border border-rose-500/5">
-          <span class="text-[10px] text-slate-400 block font-sans">转运点</span>
-          <span :class="[isLargeScreen ? 'text-xs' : 'text-sm', 'font-bold text-sky-300']">{{ wastes.hazardTransferred }}</span>
+          <span class="text-xs text-slate-400 block font-sans">转运点</span>
+          <span :class="[isLargeScreen ? 'text-base' : 'text-lg', 'font-black text-sky-300']">{{ wastes.hazardTransferred }}</span>
         </div>
         <div class="bg-[#051330]/80 p-1 rounded border border-rose-500/5">
-          <span class="text-[10px] text-slate-400 block font-sans">待消库</span>
-          <span :class="[isLargeScreen ? 'text-xs' : 'text-sm', 'font-bold text-emerald-400']">{{ wastes.hazardStored }}</span>
+          <span class="text-xs text-slate-400 block font-sans">待消库</span>
+          <span :class="[isLargeScreen ? 'text-base' : 'text-lg', 'font-black text-emerald-400']">{{ wastes.hazardStored }}</span>
         </div>
       </div>
     </div>
 
     <!-- Storage capacity progress -->
     <div :class="['bg-[#0d2a63]/30 rounded border border-cyan-500/10', isLargeScreen ? 'p-1.5' : 'p-2.5']">
-      <div class="text-[11px] text-cyan-300 font-bold mb-1.5">📊 库容使用率</div>
+      <div class="text-xs text-cyan-300 font-bold mb-1.5">📊 库容使用率</div>
       <div class="space-y-1.5">
         <div>
-          <div class="flex justify-between text-[10px] text-slate-300 mb-0.5">
+          <div class="flex justify-between text-xs text-slate-300 mb-0.5">
             <span>一号固废暂存站</span>
-            <span class="text-cyan-400 font-mono">72%</span>
+            <span class="text-cyan-400 font-mono font-bold">72%</span>
           </div>
           <div class="w-full h-1.5 bg-[#051330] rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full" style="width: 72%" />
           </div>
         </div>
         <div>
-          <div class="flex justify-between text-[10px] text-slate-300 mb-0.5">
+          <div class="flex justify-between text-xs text-slate-300 mb-0.5">
             <span>二号危废暂存站</span>
-            <span class="text-amber-400 font-mono">85%</span>
+            <span class="text-amber-400 font-mono font-bold">85%</span>
           </div>
           <div class="w-full h-1.5 bg-[#051330] rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" style="width: 85%" />
@@ -85,8 +85,8 @@
 
     <!-- Recent transfer records -->
     <div :class="['bg-[#051330]/40 rounded border border-cyan-500/10', isLargeScreen ? 'p-1.5' : 'p-2.5']">
-      <div class="text-[11px] text-cyan-300 font-bold mb-1">🚛 近期转运记录</div>
-      <div class="space-y-0.5 text-[10px] font-mono">
+      <div class="text-xs text-cyan-300 font-bold mb-1">🚛 近期转运记录</div>
+      <div class="space-y-0.5 text-xs font-mono">
         <div class="flex justify-between text-slate-300">
           <span class="font-sans">华兴水晶 → 副产料外运</span>
           <span class="text-emerald-400">已完成</span>
@@ -104,8 +104,8 @@
 
     <!-- Alert items -->
     <div :class="['bg-amber-950/15 rounded border border-amber-500/10', isLargeScreen ? 'p-1.5' : 'p-2.5']">
-      <div class="text-[11px] text-amber-300 font-bold mb-1">⚠ 待处理事项</div>
-      <div class="space-y-0.5 text-[10px]">
+      <div class="text-xs text-amber-300 font-bold mb-1">⚠ 待处理事项</div>
+      <div class="space-y-0.5 text-xs">
         <div class="flex justify-between text-amber-200 font-sans">
           <span>二号危废站库容预警</span>
           <span class="text-slate-400">今日</span>

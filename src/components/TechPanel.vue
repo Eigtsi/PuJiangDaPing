@@ -45,7 +45,7 @@
     </div>
 
     <!-- Content: hidden when collapsed -->
-    <div v-show="!collapsed" :class="[collapsible ? 'transition-all duration-300' : '', 'flex-1 min-h-0 overflow-y-auto no-scrollbar']">
+    <div v-show="!collapsed" :class="[collapsible ? 'transition-all duration-300' : '', autoHeight ? 'overflow-y-auto no-scrollbar' : 'flex-1 min-h-0 overflow-y-auto no-scrollbar']">
       <slot></slot>
     </div>
 
@@ -66,6 +66,7 @@ interface Props {
   collapsible?: boolean;
   collapsed?: boolean;
   expandable?: boolean;
+  autoHeight?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -74,6 +75,7 @@ withDefaults(defineProps<Props>(), {
   collapsible: false,
   collapsed: false,
   expandable: true,
+  autoHeight: false,
 });
 
 defineEmits<{
