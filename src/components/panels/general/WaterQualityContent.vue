@@ -108,7 +108,7 @@
           <span class="text-slate-400">11:20</span>
         </div>
         <div class="flex justify-between text-amber-200">
-          <span class="font-sans">东部2号排口 COD临近阈值</span>
+          <span class="font-sans">东部排口 COD临近阈值</span>
           <span class="text-slate-400">09:45</span>
         </div>
       </div>

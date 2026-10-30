@@ -33,6 +33,13 @@ export interface SourceSplit {
   price?: number  // 单价（元/吨，水费构成用）
 }
 
+/** 用水量构成（吨，展开详情用） */
+export interface WaterVolumeSplit {
+  name: string   // '厂自来水量' | '卫自来水量' | '中水量'
+  value: number  // 吨
+  color?: string
+}
+
 export interface ParkProfile {
   key: ParkKey
   name: string       // 全称：水晶产业园（中部）
@@ -64,6 +71,7 @@ export interface ParkProfile {
     collectionRate: number // 收缴率 %
     price: number          // 基础水价 元/吨
     sourceSplit: SourceSplit[] // 水源构成
+    volumeSplit: WaterVolumeSplit[] // 用水量构成（吨）
   }
   electricity: {
     monthUsage: number     // 本月用电量 kWh
@@ -156,6 +164,11 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
         { name: '卫自来水处理费', value: 8, color: '#10b981', price: 0.38 },
         { name: '中水费', value: 22, color: '#f59e0b', price: 0.68 },
         { name: '中水处理费', value: 14, color: '#8b5cf6', price: 0.40 }
+      ],
+      volumeSplit: [
+        { name: '厂自来水量', value: 4100, color: '#0ea5e9' },
+        { name: '卫自来水量', value: 1950, color: '#14b8a6' },
+        { name: '中水量', value: 2150, color: '#f59e0b' }
       ]
     },
     electricity: {
@@ -257,6 +270,11 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
         { name: '卫自来水处理费', value: 7, color: '#10b981', price: 0.35 },
         { name: '中水费', value: 21, color: '#f59e0b', price: 0.80 },
         { name: '中水处理费', value: 12, color: '#8b5cf6', price: 0.50 }
+      ],
+      volumeSplit: [
+        { name: '厂自来水量', value: 3050, color: '#0ea5e9' },
+        { name: '卫自来水量', value: 1450, color: '#14b8a6' },
+        { name: '中水量', value: 1600, color: '#f59e0b' }
       ]
     },
     electricity: {
@@ -334,7 +352,7 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
     water: {
       complianceRate: 84.1,
       alertCount: 5,
-      outletCount: 1,
+      outletCount: 0,
       riskFactor: '氟化物',
       indicators: [
         { name: 'pH', unit: '', value: 7.0, level: 'normal' },
@@ -358,6 +376,11 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
         { name: '卫自来水处理费', value: 9, color: '#10b981', price: 0.35 },
         { name: '中水费', value: 23, color: '#f59e0b', price: 0.65 },
         { name: '中水处理费', value: 14, color: '#8b5cf6', price: 0.45 }
+      ],
+      volumeSplit: [
+        { name: '厂自来水量', value: 2700, color: '#0ea5e9' },
+        { name: '卫自来水量', value: 1300, color: '#14b8a6' },
+        { name: '中水量', value: 1400, color: '#f59e0b' }
       ]
     },
     electricity: {
@@ -416,4 +439,17 @@ export const monthOptions: MonthFilterOption[] = [
   { key: '2026-08', label: '2026年8月', factor: 1.22 },
   { key: '2026-09', label: '2026年9月', factor: 1.07 },
   { key: '2026-10', label: '2026年10月', factor: 1.0 },
+]
+
+/** 年份筛选选项（统计年份用，全年倍数） */
+export interface YearFilterOption {
+  key: string
+  label: string
+  factor: number   // 相对当前月（2026-10）基准的全年用量/金额倍数
+}
+
+export const yearOptions: YearFilterOption[] = [
+  { key: '2024', label: '2024年', factor: 10.6 },
+  { key: '2025', label: '2025年', factor: 11.4 },
+  { key: '2026', label: '2026年', factor: 12.2 },
 ]

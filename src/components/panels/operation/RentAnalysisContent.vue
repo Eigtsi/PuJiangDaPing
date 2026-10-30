@@ -27,7 +27,7 @@
 
     <div class="flex items-center gap-1.5 mb-1">
       <span class="w-[3px] h-3.5 rounded-full bg-cyan-400/80"></span>
-      <span class="text-sm text-slate-300 font-semibold tracking-wide">年租金构成（按标的类型）</span>
+      <span class="text-sm text-slate-300 font-semibold tracking-wide">年租金构成</span>
     </div>
     <TechBarChart :xData="typeLabels" :series="typeSeries" :height="84" />
   </div>
@@ -64,6 +64,6 @@ const typeLabels = computed(() => profile.value.rentByType.map(t => t.type))
 const typeSeries = computed(() => [{
   name: '年租金',
   data: profile.value.rentByType.map(t => t.rent),
-  color: '#06b6d4'
+  colors: ['#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 }])
 </script>

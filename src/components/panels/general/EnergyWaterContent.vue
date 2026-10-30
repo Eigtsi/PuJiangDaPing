@@ -57,15 +57,15 @@
       <div class="grid grid-cols-3 gap-1.5">
         <div :class="['bg-[#0b2152]/50 rounded border border-cyan-500/10 text-center', isLargeScreen ? 'p-0.5 py-1' : 'p-2.5']">
           <span class="block text-[8px] text-slate-400 mb-0.5 scale-90">工业用水</span>
-          <span :class="['font-mono text-cyan-300 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">3,000 吨</span>
+          <span :class="['font-mono text-cyan-300 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">3000 吨</span>
         </div>
         <div :class="['bg-[#0b2152]/50 rounded border border-cyan-500/10 text-center', isLargeScreen ? 'p-0.5 py-1' : 'p-2.5']">
           <span class="block text-[8px] text-slate-400 mb-0.5 scale-90">生活用水</span>
-          <span :class="['font-mono text-sky-400 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">10,000 吨</span>
+          <span :class="['font-mono text-sky-400 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">10000 吨</span>
         </div>
         <div :class="['bg-[#0b2152]/50 rounded border border-cyan-500/10 text-center', isLargeScreen ? 'p-0.5 py-1' : 'p-2.5']">
           <span class="block text-[8px] text-slate-400 mb-0.5 scale-90">低品回收</span>
-          <span :class="['font-mono text-emerald-400 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">5,000 吨</span>
+          <span :class="['font-mono text-emerald-400 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">5000 吨</span>
         </div>
       </div>
       <div :class="['w-full bg-[#06183d] rounded-full mt-1 overflow-hidden border border-cyan-500/10', isLargeScreen ? 'h-1.5' : 'h-2.5']">
@@ -85,7 +85,7 @@
       <div class="grid grid-cols-3 gap-1.5">
         <div :class="['bg-[#4a1c29]/30 rounded border border-rose-500/10 text-center', isLargeScreen ? 'p-0.5 py-1' : 'p-2.5']">
           <span class="block text-[8px] text-slate-400 mb-0.5 scale-90">排水总量</span>
-          <span :class="['font-mono text-rose-300 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">8,000 吨</span>
+          <span :class="['font-mono text-rose-300 font-black', isLargeScreen ? 'text-[11px]' : 'text-sm md:text-base']">8000 吨</span>
         </div>
         <div :class="['bg-[#4a1c29]/30 rounded border border-rose-500/10 text-center', isLargeScreen ? 'p-0.5 py-1' : 'p-2.5']">
           <span class="block text-[8px] text-slate-400 mb-0.5 scale-90">排水温度</span>
@@ -132,6 +132,6 @@ const barSeries = computed(() => [
 ])
 
 function fmtNum(n: number): string {
-  return n.toLocaleString('zh-CN')
+  return String(n)
 }
 </script>

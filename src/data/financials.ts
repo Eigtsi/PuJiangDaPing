@@ -297,6 +297,12 @@ export const rentByAssetType: AssetTypeRent[] = [
   { type: '营业房', rent: 95.8 }
 ]
 
+/** 年物业费按标的物类型构成（年度口径，合计与 zoneRevenues.total.property 一致） */
+export interface AssetTypeProperty {
+  type: string  // '厂房' | '仓库' | '综合楼' | '宿舍楼' | '营业房'
+  property: number  // 万元/年
+}
+
 // ---------------------------------------------------------------------------
 // 物业费单价标准（元/年/㎡，年度口径，依据《2025年〔9〕号关于2026年度租金等费用收缴方案的通知》）
 // 厂房 15 / 综合楼 8 / 宿舍楼 12 / 营业房 8 / 仓库 8
@@ -320,7 +326,7 @@ export const propertyFeeStandards: PropertyFeeStandard[] = [
 // 2025 为实际基准，2026 依据《2025年〔9〕号关于2026年度租金等费用收缴方案的通知》估算
 // ---------------------------------------------------------------------------
 
-export type FiscalYear = '2025' | '2026'
+export type FiscalYear = '2024' | '2025' | '2026'
 
 export interface YearZoneRevenue {
   zone: 'east' | 'center' | 'west' | 'total'
@@ -335,11 +341,38 @@ export interface YearFinancialProfile {
   label: string
   zones: YearZoneRevenue[]
   rentByType: AssetTypeRent[]                    // 年租金按标的物类型构成
+  propertyByType: AssetTypeProperty[]            // 年物业费按标的物类型构成
   parking: { totalSpaces: number; occupiedSpaces: number }
   monthlyParking: number[]                       // 12 个月停车费（万元）
 }
 
 export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
+  '2024': {
+    year: '2024',
+    label: '2024年',
+    zones: [
+      { zone: 'east',   rent: 392.0, property: 98.6, parking: 17.3, collectionRate: 98.6 },
+      { zone: 'center', rent: 477.2, property: 120.2, parking: 14.8, collectionRate: 99.1 },
+      { zone: 'west',   rent: 314.4, property: 78.0,  parking: 10.6, collectionRate: 97.8 },
+      { zone: 'total',  rent: 1183.6, property: 296.8, parking: 42.7, collectionRate: 98.6 }
+    ],
+    rentByType: [
+      { type: '厂房', rent: 532.0 },
+      { type: '仓库', rent: 199.5 },
+      { type: '综合楼', rent: 247.0 },
+      { type: '宿舍楼', rent: 114.0 },
+      { type: '营业房', rent: 91.0 }
+    ],
+    propertyByType: [
+      { type: '厂房', property: 133.0 },
+      { type: '仓库', property: 38.0 },
+      { type: '综合楼', property: 57.0 },
+      { type: '宿舍楼', property: 47.5 },
+      { type: '营业房', property: 21.3 }
+    ],
+    parking: { totalSpaces: 1200, occupiedSpaces: 835 },
+    monthlyParking: [3.0, 2.7, 3.3, 3.6, 3.8, 4.0, 4.2, 4.1, 3.7, 3.5, 3.2, 3.6]
+  },
   '2025': {
     year: '2025',
     label: '2025年',
@@ -355,6 +388,13 @@ export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
       { type: '综合楼', rent: 260.0 },
       { type: '宿舍楼', rent: 120.0 },
       { type: '营业房', rent: 95.8 }
+    ],
+    propertyByType: [
+      { type: '厂房', property: 140.0 },
+      { type: '仓库', property: 40.0 },
+      { type: '综合楼', property: 60.0 },
+      { type: '宿舍楼', property: 50.0 },
+      { type: '营业房', property: 22.4 }
     ],
     parking: { totalSpaces: 1260, occupiedSpaces: 897 },
     monthlyParking: [3.2, 2.8, 3.5, 3.8, 4.0, 4.2, 4.5, 4.3, 3.9, 3.7, 3.4, 3.7]
@@ -375,12 +415,20 @@ export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
       { type: '宿舍楼', rent: 126.0 },
       { type: '营业房', rent: 100.6 }
     ],
+    propertyByType: [
+      { type: '厂房', property: 145.5 },
+      { type: '仓库', property: 41.6 },
+      { type: '综合楼', property: 62.4 },
+      { type: '宿舍楼', property: 52.0 },
+      { type: '营业房', property: 23.4 }
+    ],
     parking: { totalSpaces: 1380, occupiedSpaces: 1010 },
     monthlyParking: [3.4, 3.0, 3.7, 4.0, 4.2, 4.4, 4.7, 4.5, 4.1, 3.9, 3.6, 3.9]
   }
 }
 
 export const yearOptions: { key: FiscalYear; label: string }[] = [
+  { key: '2024', label: '2024年' },
   { key: '2025', label: '2025年' },
   { key: '2026', label: '2026年' }
 ]

@@ -67,11 +67,11 @@ const overallRate = computed(() => overallRentalRate())
 const totalBuildings = computed(() => buildings.length)
 
 const totalArea = computed(() =>
-  buildings.reduce((s, b) => s + b.totalArea, 0).toLocaleString()
+  String(buildings.reduce((s, b) => s + b.totalArea, 0))
 )
 
 const rentedArea = computed(() =>
-  buildings.reduce((s, b) => s + b.rentedArea, 0).toLocaleString()
+  String(buildings.reduce((s, b) => s + b.rentedArea, 0))
 )
 
 function statusBadge(status: string): string {

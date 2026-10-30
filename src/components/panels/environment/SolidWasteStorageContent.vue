@@ -9,7 +9,7 @@
     <div class="grid grid-cols-2 gap-2">
       <div class="bg-cyan-950/20 p-1 rounded border border-cyan-500/10 text-center">
         <span class="text-slate-400 block font-bold text-xs">一般固废</span>
-        <span class="text-cyan-300 font-mono font-extrabold text-xs">1,240 吨</span>
+        <span class="text-cyan-300 font-mono font-extrabold text-xs">1240 吨</span>
       </div>
       <div class="bg-cyan-950/20 p-1 rounded border border-cyan-500/10 text-center">
         <span class="text-slate-400 block font-bold text-xs">危险废物</span>

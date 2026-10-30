@@ -106,7 +106,7 @@
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="selectedRain" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70" @click="closeVideo">
-          <div class="relative w-[520px] max-w-[90vw] bg-[#071a47] border border-cyan-400/60 rounded-lg shadow-[0_0_30px_rgba(6,182,212,0.35)] overflow-hidden" @click.stop>
+          <div class="relative w-[520px] max-w-[90vw] bg-[#071a47]/60 border border-cyan-400/60 rounded-lg shadow-[0_0_30px_rgba(6,182,212,0.35)] overflow-hidden" @click.stop>
             <div class="flex items-center justify-between px-4 py-2.5 border-b border-cyan-500/20 bg-[#0b255c]/50">
               <div class="flex items-center gap-2 text-cyan-300 font-bold">
                 <Video class="w-4 h-4" />

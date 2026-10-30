@@ -251,8 +251,8 @@ export const systemAlerts: SystemAlert[] = [
     title: 'B区光伏电站发电量偏低',
     description: '本月光伏发电量较预期偏低12%，疑似组件积灰',
     pointName: 'B区屋顶光伏电站',
-    value: '日均 2,800 kWh',
-    threshold: '日均 ≥ 3,200 kWh',
+    value: '日均 2800 kWh',
+    threshold: '日均 ≥ 3200 kWh',
     time: '2025-06-02 08:00',
     status: '处置中',
     handler: '孙工'
@@ -264,8 +264,8 @@ export const systemAlerts: SystemAlert[] = [
     title: '园区总用水量超月度预算',
     description: '6月上半月用水已达月度预算的65%，需关注是否存在管网泄漏',
     pointName: '园区总水表',
-    value: '已用 12,200 吨',
-    threshold: '月预算 ≤ 18,700 吨',
+    value: '已用 12200 吨',
+    threshold: '月预算 ≤ 18700 吨',
     time: '2025-06-02 07:00',
     status: '未处置'
   }

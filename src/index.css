@@ -37,12 +37,17 @@ body {
 }
 
 .tech-panel {
-  background: linear-gradient(135deg, rgba(23, 37, 84, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(23, 37, 84, 0.6) 0%, rgba(15, 23, 42, 0.6) 100%);
   border: 1px solid rgba(0, 242, 255, 0.4);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px);
   border-radius: 8px;
   position: relative;
+  /* 移除 backdrop-filter：Intel 核显上 backdrop-filter 位于 transform:scale 容器内会渲染失败，
+     表现为“打开控制台才显示、关闭控制台整屏黑”。改用纯半透明底色 + 阴影，观感基本一致。 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .tech-panel::before {
@@ -65,6 +70,18 @@ body {
   height: 10px;
   border-bottom: 2px solid #00f2ff;
   border-right: 2px solid #00f2ff;
+}
+
+/* 同上：禁用所有 backdrop-blur 的模糊滤镜，规避 Intel 核显黑屏（半透明底色已足够） */
+.backdrop-blur,
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.backdrop-blur-lg,
+.backdrop-blur-xl {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* HUD 四角括号（配合 .tech-panel 的 ::before/::after 补齐四个角） */

@@ -6,17 +6,9 @@
     <!-- 底部暗色过渡（与主题融合，降低透明度避免遮挡地图） -->
     <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#040e29]/45 via-[#040e29]/15 to-transparent pointer-events-none z-10"></div>
 
-    <!-- 左上角：地图说明 -->
-    <div class="absolute top-3 left-3 z-20 pointer-events-none">
-      <div class="bg-black/85 border border-neon-blue/40 px-3 py-1.5 rounded-md backdrop-blur-md text-xs text-white/80 font-mono shadow-[0_8px_24px_rgba(0,242,255,0.15)] flex items-center gap-2">
-        <span class="w-1.5 h-1.5 rounded-full bg-[#00ff99] animate-pulse shadow-[0_0_6px_rgba(0,255,153,0.8)]" />
-        <span>中部产业园 · 高德卫星影像</span>
-      </div>
-    </div>
-
     <!-- 右下角：监控图例（可收缩/展开，参照总览驾驶舱 LegendPanel「分级图例」样式） -->
     <div class="absolute bottom-[90px] right-[450px] z-30 font-sans">
-      <div class="relative tech-panel rounded-lg w-[240px]">
+      <div class="relative tech-panel rounded-lg w-fit">
         <span class="hud-corner hud-corner-tr" />
         <span class="hud-corner hud-corner-bl" />
 
@@ -32,18 +24,17 @@
 
         <!-- 内容（展开时显示） -->
         <div v-show="!legendCollapsed" class="px-3 pb-3">
-          <!-- 状态分级 — 渐变色带（正常→预警→报警） -->
-          <div class="mb-2">
-            <div class="h-2 rounded-full bg-gradient-to-r from-[#00ff99] via-[#fdad43] to-[#ff4a4a] shadow-[0_0_10px_rgba(0,255,153,0.25)]" />
-            <div class="flex justify-between text-[10px] mt-1.5 font-mono">
-              <span class="flex items-center gap-1 text-[#00ff99]"><span class="w-1.5 h-1.5 rounded-full bg-[#00ff99] shadow-[0_0_5px_rgba(0,255,153,0.8)]" />正常</span>
-              <span class="flex items-center gap-1 text-[#fdad43]"><span class="w-1.5 h-1.5 rounded-full bg-[#fdad43] shadow-[0_0_5px_rgba(253,173,67,0.8)]" />预警</span>
-              <span class="flex items-center gap-1 text-[#ff4a4a]"><span class="w-1.5 h-1.5 rounded-full bg-[#ff4a4a] shadow-[0_0_5px_rgba(255,74,74,0.8)]" />报警</span>
+          <!-- 状态分级（正常→黄色预警→红色预警；无监测标记的园区不显示） -->
+          <div v-if="hasStatusMarkers" class="mb-2">
+            <div class="flex flex-col gap-1 text-[10px] font-mono">
+              <span class="flex items-center gap-1.5 text-[#00ff99]"><span class="w-1.5 h-1.5 rounded-full bg-[#00ff99] shadow-[0_0_5px_rgba(0,255,153,0.8)]" />正常</span>
+              <span class="flex items-center gap-1.5 text-[#fdad43]"><span class="w-1.5 h-1.5 rounded-full bg-[#fdad43] shadow-[0_0_5px_rgba(253,173,67,0.8)]" />黄色预警</span>
+              <span class="flex items-center gap-1.5 text-[#ff4a4a]"><span class="w-1.5 h-1.5 rounded-full bg-[#ff4a4a] shadow-[0_0_5px_rgba(255,74,74,0.8)]" />红色预警</span>
             </div>
           </div>
 
-          <!-- 类型图例 — 两列网格 -->
-          <div class="grid grid-cols-2 gap-x-1.5 gap-y-0.5">
+          <!-- 类型图例 — 单列（每项一行） -->
+          <div class="flex flex-col gap-0.5">
             <div
               v-for="layer in legendLayers" :key="layer.type"
               @click="toggleLayer(layer.type)"
@@ -57,6 +48,138 @@
       </div>
     </div>
 
+    <!-- 楼栋悬浮面板（仅点 X 关闭；检索/详情均在此面板内，不另弹窗） -->
+    <Transition name="pop">
+      <div v-if="hoveredBuilding" class="absolute left-[450px] top-16 z-40 pointer-events-auto">
+        <div class="bg-[#09224f]/60 border border-cyan-400 rounded-lg shadow-[0_8px_32px_rgba(6,182,212,0.4)] backdrop-blur-md w-[320px] max-h-[78vh] flex flex-col overflow-hidden">
+          <!-- 标题栏 + 关闭 -->
+          <div class="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-cyan-500/20 shrink-0">
+            <div class="flex items-baseline gap-2 min-w-0">
+              <span class="text-sm font-bold text-cyan-300 whitespace-nowrap">{{ hoveredBuilding.mapName }}</span>
+              <span class="text-xs text-slate-400 whitespace-nowrap">{{ hoveredBuilding.type }}</span>
+            </div>
+            <button @click="closeHoverPanel" class="text-slate-400 hover:text-cyan-300 transition p-0.5 shrink-0 cursor-pointer"><X class="w-4 h-4" /></button>
+          </div>
+
+          <!-- 检索输入（始终在面板内） -->
+          <div class="px-3 pt-2.5 shrink-0">
+            <div class="flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-[#051330]/80 border border-cyan-400/30 focus-within:border-cyan-400">
+              <Search class="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="检索园区企业…"
+                class="flex-1 min-w-0 bg-transparent text-cyan-200 text-xs placeholder:text-slate-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- 内容区 -->
+          <div class="px-3 py-2.5 flex-1 min-h-0 overflow-y-auto no-scrollbar">
+            <!-- 企业详情 -->
+            <template v-if="panelEnterprise">
+              <button @click="backToList" class="flex items-center gap-1 text-xs text-cyan-300 hover:text-cyan-200 transition mb-2 cursor-pointer">
+                <ChevronLeft class="w-3.5 h-3.5" /> 返回列表
+              </button>
+
+              <div class="px-2.5 py-2 mb-2 rounded bg-[#0a1e4a]/60 border border-cyan-500/20">
+                <div class="text-sm font-bold text-cyan-300 leading-snug break-all">{{ panelEnterprise.name }}</div>
+                <div v-if="panelEnterprise.industry" class="text-[11px] text-slate-400 mt-0.5">{{ panelEnterprise.industry }}</div>
+                <div class="mt-1.5 pt-1.5 border-t border-cyan-500/15 space-y-1 text-xs">
+                  <div class="flex justify-between"><span class="text-slate-400">联系人</span><span class="text-slate-200">{{ panelEnterprise.contact }}</span></div>
+                  <div class="flex justify-between"><span class="text-slate-400">联系电话</span><span class="text-cyan-300 font-mono">{{ panelEnterprise.phone }}</span></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-1.5 mb-2.5">
+                <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
+                  <span class="block text-[11px] text-slate-400">房间数</span>
+                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-base tabular-nums">{{ panelEnterprise.rooms.length }}</span>
+                </div>
+                <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
+                  <span class="block text-[11px] text-slate-400">总面积 (㎡)</span>
+                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-base tabular-nums">{{ fmt(panelEnterprise.totalArea) }}</span>
+                </div>
+                <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
+                  <span class="block text-[11px] text-slate-400">年总租金 (元)</span>
+                  <span class="block mt-0.5 font-mono font-black text-amber-300 text-base tabular-nums">{{ fmt(panelEnterprise.annualRent) }}</span>
+                </div>
+                <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
+                  <span class="block text-[11px] text-slate-400">年物业费 (元)</span>
+                  <span class="block mt-0.5 font-mono font-black text-emerald-400 text-base tabular-nums">{{ fmt(panelEnterprise.annualProperty) }}</span>
+                </div>
+              </div>
+
+              <div class="text-[11px] text-slate-400 mb-1.5">房间明细（{{ panelEnterprise.rooms.length }} 间）</div>
+              <div class="space-y-1.5">
+                <div v-for="(room, i) in panelEnterprise.rooms" :key="i" class="bg-[#051330]/50 rounded px-2.5 py-1.5 border border-cyan-500/10">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <span v-if="room.zone" class="text-[10px] px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-300 whitespace-nowrap shrink-0">{{ shortZone(room.zone) }}</span>
+                      <span class="text-slate-200 font-medium truncate">{{ roomLabel(room) }}</span>
+                    </div>
+                    <span class="text-[10px] text-cyan-300/80 whitespace-nowrap shrink-0">{{ room.resourceType }}</span>
+                  </div>
+                  <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-slate-400">
+                    <span>面积 <span class="text-slate-200 font-mono">{{ room.totalArea != null ? fmt(room.totalArea) + '㎡' : '—' }}</span></span>
+                    <span v-if="room.baseRent != null">基础租金 <span class="text-slate-200 font-mono">{{ fmt(room.baseRent) }}</span></span>
+                    <span v-if="room.floorCoeff != null">楼层系数 <span class="text-slate-200 font-mono">{{ room.floorCoeff }}</span></span>
+                    <span v-if="room.leaseStart || room.leaseEnd">租期 <span class="text-slate-200 font-mono">{{ room.leaseStart ?? '—' }} ~ {{ room.leaseEnd ?? '—' }}</span></span>
+                    <span v-if="room.annualRent != null">年租金 <span class="text-amber-300/90 font-mono">{{ fmt(room.annualRent) }}</span></span>
+                    <span v-if="room.annualProperty != null">年物业费 <span class="text-emerald-400/90 font-mono">{{ fmt(room.annualProperty) }}</span></span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- 检索结果（输入关键字时） -->
+            <template v-else-if="searchQuery.trim()">
+              <div class="text-xs text-slate-400 mb-1">检索结果（{{ searchResults.length }}）</div>
+              <div v-if="searchResults.length" class="space-y-1">
+                <button
+                  v-for="r in searchResults"
+                  :key="r.name"
+                  @click="openEnterprise(r.name)"
+                  class="w-full text-left text-xs text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
+                >
+                  <span class="truncate">{{ r.name }}</span>
+                  <span class="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">{{ r.rooms.length }} 间</span>
+                </button>
+              </div>
+              <div v-else class="text-xs text-slate-500 text-center py-6">无匹配企业</div>
+            </template>
+
+            <!-- 默认：本楼统计 + 入住企业 -->
+            <template v-else>
+              <div class="grid grid-cols-2 gap-1.5 mb-2">
+                <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
+                  <span class="block text-xs text-slate-400">在租数量</span>
+                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-lg tabular-nums">{{ hoveredBuilding.rented }}</span>
+                </div>
+                <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
+                  <span class="block text-xs text-slate-400">空闲数量</span>
+                  <span class="block mt-0.5 font-mono font-black text-emerald-400 text-lg tabular-nums">{{ hoveredBuilding.vacant }}</span>
+                </div>
+              </div>
+              <div class="text-xs text-slate-400 mb-1">入住企业（{{ hoveredBuilding.enterprises.length }}）<span class="text-slate-500">· 点击查看详情</span></div>
+              <div v-if="hoveredBuilding.enterprises.length" class="space-y-1">
+                <button
+                  v-for="e in hoveredBuilding.enterprises"
+                  :key="e"
+                  @click="openEnterprise(e)"
+                  class="w-full text-left text-xs text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
+                >
+                  <span class="truncate">{{ e }}</span>
+                  <ChevronRight class="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                </button>
+              </div>
+              <div v-else class="text-xs text-slate-500 text-center py-2">暂无入住企业</div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 居中详情弹窗 -->
     <Transition name="pop">
       <div
@@ -64,7 +187,7 @@
         class="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
       >
         <div
-          :class="['pointer-events-auto relative bg-[#09224f]/95 border border-cyan-400 p-4 rounded-xl shadow-[0_8px_40px_rgba(6,182,212,0.5)] backdrop-blur-md', showMonitorDetail ? 'w-[460px] max-h-[80vh] overflow-y-auto' : 'w-[360px]']"
+          :class="['pointer-events-auto relative bg-[#09224f]/60 border border-cyan-400 p-4 rounded-xl shadow-[0_8px_40px_rgba(6,182,212,0.5)] backdrop-blur-md', showMonitorDetail ? 'w-[460px] max-h-[80vh] overflow-y-auto' : 'w-[360px]']"
         >
           <div class="flex justify-between items-start border-b border-cyan-500/20 pb-2 mb-2.5">
             <div class="text-cyan-300 font-bold flex items-center gap-2 text-sm">
@@ -73,10 +196,10 @@
             </div>
             <button @click="selectedMarker = null" class="text-slate-400 hover:text-cyan-400 transition p-1"><X class="w-4 h-4" /></button>
           </div>
-          <div class="text-xs text-slate-400 mb-2">
-            类型：<span class="text-cyan-300">{{ typeLabel }}</span> &nbsp;｜&nbsp;
-            区块：<span class="text-cyan-300">{{ zoneLabel }}</span> &nbsp;｜&nbsp;
-            状态：<span :class="statusClass">{{ statusText }}</span>
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-2 px-3">
+            <span>类型：<span class="text-cyan-300">{{ typeLabel }}</span></span>
+            <span>园区：<span class="text-cyan-300">{{ zoneLabel }}</span></span>
+            <span>状态：<span :class="statusClass">{{ statusText }}</span></span>
           </div>
 
           <!-- 企业类型：显示更多操作 -->
@@ -108,7 +231,7 @@
             </button>
 
             <!-- 展开后：详细数据 -->
-            <div v-else class="mt-2 bg-[#051330] p-3 rounded border border-cyan-500/15">
+            <div v-else class="mt-2 bg-[#051330]/60 p-3 rounded border border-cyan-500/15">
               <div class="flex justify-between items-center mb-1">
                 <span class="text-xs text-cyan-400 font-bold">实时监测数据</span>
                 <span class="text-xs text-slate-200">{{ monitorPoint?.online ? '🟢 在线' : '🔴 离线' }}</span>
@@ -129,13 +252,50 @@
 
               <!-- 趋势图 -->
               <div v-if="monitorPoint" class="border-t border-cyan-500/10 pt-2">
-                <div class="text-xs text-cyan-400 font-bold mb-1.5">24小时趋势</div>
+                <!-- 模式切换 + 导出 -->
+                <div class="flex items-center justify-between mb-1.5">
+                  <div class="flex items-center rounded border border-cyan-500/30 p-0.5 shrink-0">
+                    <button type="button" @click="trendMode = 'day'" :class="['px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer', trendMode === 'day' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-slate-200']">近24小时</button>
+                    <button type="button" @click="trendMode = 'history'" :class="['px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer', trendMode === 'history' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-slate-200']">历史趋势</button>
+                  </div>
+                  <button
+                    @click="exportTrend"
+                    class="flex items-center gap-1 text-xs text-cyan-300 hover:text-cyan-200 border border-cyan-500/30 rounded px-1.5 py-0.5 cursor-pointer transition"
+                  >
+                    <Download class="w-3 h-3" /> 导出
+                  </button>
+                </div>
+
+                <!-- 历史趋势：日期筛选（近3个月） -->
+                <div v-if="trendMode === 'history'" class="flex items-center gap-1.5 mb-2 text-xs">
+                  <span class="text-slate-400 shrink-0">筛选</span>
+                  <el-select v-model="trendStartDate" size="small" class="trend-date-select shrink-0">
+                    <el-option v-for="d in trendDates" :key="'s' + d" :label="dateLabel(d)" :value="d" />
+                  </el-select>
+                  <span class="text-slate-500">—</span>
+                  <el-select v-model="trendEndDate" size="small" class="trend-date-select shrink-0">
+                    <el-option v-for="d in trendDates" :key="'e' + d" :label="dateLabel(d)" :value="d" />
+                  </el-select>
+                  <span class="text-slate-500 ml-auto shrink-0">{{ activeTrendPoints.length }} 天</span>
+                </div>
+
+                <!-- 平均值统计 -->
+                <div v-if="avgStats.length" class="grid grid-cols-2 gap-1 mb-2">
+                  <div v-for="s in avgStats" :key="s.label" class="flex justify-between items-center bg-[#0a1e4a]/60 rounded px-2 py-1">
+                    <span class="text-slate-400 text-[11px]">{{ s.label }}</span>
+                    <span class="font-mono font-bold text-cyan-300 text-[11px]">{{ s.value }}<span class="text-slate-500 text-[10px] ml-0.5">{{ s.unit }}</span></span>
+                  </div>
+                </div>
+
                 <TechLineChart
                   :xData="trendXData"
                   :series="trendSeries"
-                  :height="150"
+                  :height="200"
                   :showArea="false"
                   :showLegend="true"
+                  :yInterval="trendYAxis.interval"
+                  :yName="trendYAxis.name"
+                  :y2Name="trendY2Name"
                 />
               </div>
             </div>
@@ -149,12 +309,73 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { MapPin, X, BarChart3, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { MapPin, X, BarChart3, ChevronDown, ChevronUp, Search, ChevronRight, ChevronLeft, Download } from 'lucide-vue-next'
 import TechLineChart from '../charts/TechLineChart.vue'
-import { mapMarkers, markerToLngLat, parkCenter, statusColors } from '../../data/mapData'
+import { mapMarkers, markerToLngLat, statusColors } from '../../data/mapData'
 import { monitoringPoints } from '../../data/monitoringPoints'
-import { centerParkPolygon, centerParkBuildings } from '../../data/parkKml'
+import { parks } from '../../data/parkKml'
+import { propertyRooms, type PropertyRoom } from '../../data/propertyResources'
+import { getEnterpriseContact } from '../../data/enterpriseContacts'
 import type { MapMarker as MapMarkerData, MarkerType } from '../../data/mapData'
+
+// ===== 楼栋房产资源统计（数据来源：房产资源导入模板_已填写.xlsx 清洗后） =====
+interface BuildingStats {
+  mapName: string
+  buildingNo: string | null
+  type: string
+  total: number
+  rented: number
+  vacant: number
+  enterprises: string[]
+}
+
+// 所属园区 key -> Excel 园区名称
+function propertyZoneFor(zone: 'all' | 'east' | 'center' | 'west'): string {
+  if (zone === 'east') return '东部园区'
+  if (zone === 'west') return '西部园区'
+  return '中部园区'
+}
+
+// 地图楼栋名 -> Excel 楼号
+function mapBuildingNameToNo(name: string, zone: 'all' | 'east' | 'center' | 'west'): string | null {
+  // 厂房/楼栋：N# -> NN号楼（中部、东部通用）
+  const m = name.match(/^(\d+)#$/)
+  if (m) return String(parseInt(m[1], 10)).padStart(2, '0') + '号楼'
+  if (zone === 'east') {
+    // 东部：综合楼A/B -> A/B；C楼/D楼 保持原名
+    const z = name.match(/^综合楼([AB])$/)
+    if (z) return z[1]
+    if (name === 'C楼' || name === 'D楼') return name
+    return null
+  }
+  // 中部：综合楼A-D -> A-D；营业房 E/F/G；宿舍楼
+  const z = name.match(/^综合楼([A-D])$/)
+  if (z) return z[1]
+  if (/^[EFG]$/.test(name)) return name
+  if (name === '宿舍楼') return '宿舍楼'
+  return null
+}
+
+function getBuildingStats(mapName: string): BuildingStats | null {
+  const zone = propertyZoneFor(props.activeZone)
+  const buildingNo = mapBuildingNameToNo(mapName, props.activeZone)
+  if (!buildingNo) return null
+  const rooms = propertyRooms.filter(r => r.zone === zone && r.buildingNo === buildingNo)
+  if (rooms.length === 0) return null
+
+  const rented = rooms.filter(r => r.enterprise).length
+  const enterprises = Array.from(new Set(rooms.filter(r => r.enterprise).map(r => r.enterprise!)))
+  const types = Array.from(new Set(rooms.map(r => r.resourceType).filter((t): t is string => !!t)))
+  return {
+    mapName,
+    buildingNo,
+    type: types.join('/') || '未知',
+    total: rooms.length,
+    rented,
+    vacant: rooms.length - rented,
+    enterprises,
+  }
+}
 
 // ===== 高德地图配置 =====
 const AMAP_KEY = '257fac0c1fa2489de0bdb41ccd9d2c9a'
@@ -164,14 +385,21 @@ const AMAP_SECURITY_CODE = '802734539e7ee46162776a47a7416c04'
 interface Props {
   bgImage?: string // 兼容旧接口；使用高德地图后不再依赖静态背景图
   activeZone: 'all' | 'east' | 'center' | 'west'
+  blockFloating?: boolean // 放大面板打开时屏蔽楼栋悬浮/标记点击，关闭后恢复
 }
 
-const props = withDefaults(defineProps<Props>(), { bgImage: '' })
+const props = withDefaults(defineProps<Props>(), { bgImage: '', blockFloating: false })
 
 const emit = defineEmits<{
   (e: 'selectEnterprise', id: string): void
   (e: 'selectMarker', marker: MapMarkerData): void
 }>()
+
+// 当前所属园区的 KML 地理数据
+const activeParkData = computed(() => {
+  const z = props.activeZone === 'all' ? 'center' : props.activeZone
+  return parks[z] ?? parks.center!
+})
 
 // ===== 地图实例 =====
 const mapEl = ref<HTMLDivElement | null>(null)
@@ -191,9 +419,16 @@ const visibleLayers = ref<Set<MarkerType>>(new Set([
 // 楼栋图层（真实 KML 楼栋号）单独控制显隐
 const buildingsVisible = ref(true)
 
+// 四至范围（园区最外层边界线）显隐
+const boundaryVisible = ref(true)
+
 function toggleLayer(type: string) {
   if (type === 'building') {
     buildingsVisible.value = !buildingsVisible.value
+    return
+  }
+  if (type === 'boundary') {
+    boundaryVisible.value = !boundaryVisible.value
     return
   }
   const s = new Set(visibleLayers.value)
@@ -203,6 +438,7 @@ function toggleLayer(type: string) {
 
 function isLayerVisible(type: string): boolean {
   if (type === 'building') return buildingsVisible.value
+  if (type === 'boundary') return boundaryVisible.value
   return visibleLayers.value.has(type as MarkerType)
 }
 
@@ -227,6 +463,92 @@ const selectedMarker = ref<MapMarkerData | null>(null)
 const showMonitorDetail = ref(false)
 const dataTimestamp = ref('')
 
+// ===== 楼栋悬停统计 + 企业检索/详情（全部整合在悬浮面板内，不另弹窗） =====
+const hoveredBuilding = ref<BuildingStats | null>(null)
+// 悬浮面板内：检索关键字
+const searchQuery = ref('')
+// 悬浮面板内：当前查看的企业详情（null = 列表视图）
+const panelEnterprise = ref<EnterpriseResult | null>(null)
+
+interface EnterpriseResult {
+  name: string
+  industry: string | null
+  contact: string
+  phone: string
+  rooms: PropertyRoom[]
+  totalArea: number
+  annualRent: number
+  annualProperty: number
+}
+
+function buildEnterpriseResult(name: string): EnterpriseResult | null {
+  const rooms = propertyRooms.filter(r => r.enterprise === name)
+  if (!rooms.length) return null
+  const { contact, phone } = getEnterpriseContact(name)
+  return {
+    name,
+    industry: rooms.find(r => r.industry)?.industry ?? null,
+    contact,
+    phone,
+    rooms,
+    totalArea: rooms.reduce((s, r) => s + (r.totalArea ?? 0), 0),
+    annualRent: rooms.reduce((s, r) => s + (r.annualRent ?? 0), 0),
+    annualProperty: rooms.reduce((s, r) => s + (r.annualProperty ?? 0), 0),
+  }
+}
+
+// 面板内检索结果（全园区范围，按房间数降序）
+const searchResults = computed<EnterpriseResult[]>(() => {
+  const q = searchQuery.value.trim()
+  if (!q) return []
+  const names = new Set<string>()
+  for (const r of propertyRooms) {
+    if (r.enterprise && r.enterprise.includes(q)) names.add(r.enterprise)
+  }
+  return Array.from(names)
+    .map(n => buildEnterpriseResult(n))
+    .filter((r): r is EnterpriseResult => r !== null)
+    .sort((a, b) => b.rooms.length - a.rooms.length)
+})
+
+function openEnterprise(name: string) {
+  panelEnterprise.value = buildEnterpriseResult(name)
+}
+
+function backToList() {
+  panelEnterprise.value = null
+}
+
+function closeHoverPanel() {
+  hoveredBuilding.value = null
+  searchQuery.value = ''
+  panelEnterprise.value = null
+}
+
+// 供父组件在展开侧边面板（放大弹框）时调用：关闭地图上的楼栋悬浮面板与标记面板，避免两个图框同时显示
+function closeFloatingPanels() {
+  closeHoverPanel()
+  selectedMarker.value = null
+  showMonitorDetail.value = false
+}
+
+defineExpose({ closeFloatingPanels })
+
+// 数字显示：整数不带小数，小数保留至多 2 位
+function fmt(n: number): string {
+  if (!Number.isFinite(n)) return String(n)
+  return Number.isInteger(n) ? String(n) : String(+n.toFixed(2))
+}
+
+function roomLabel(r: PropertyRoom): string {
+  return [r.buildingNo, r.floor, r.roomNo].filter(Boolean).join(' · ') || '—'
+}
+
+// 园区短名：东部园区 -> 东部
+function shortZone(zone: string | null): string {
+  return (zone || '').replace('园区', '')
+}
+
 // ===== 初始化高德地图 =====
 onMounted(() => { initAmap() })
 
@@ -244,7 +566,7 @@ async function initAmap() {
 
     map.value = new AMap.Map(mapEl.value, {
       viewMode: '2D',
-      center: parkCenter,
+      center: activeParkData.value.center,
       zoom: 16,
       layers: [new AMap.TileLayer.Satellite()],
       resizeEnable: true,
@@ -270,8 +592,12 @@ async function initAmap() {
 function drawBoundary() {
   if (!map.value) return
   const AMap = (window as any).AMap
+  if (boundaryPolygon.value) {
+    try { map.value.remove(boundaryPolygon.value) } catch (e) {}
+    boundaryPolygon.value = null
+  }
   boundaryPolygon.value = new AMap.Polygon({
-    path: centerParkPolygon,
+    path: activeParkData.value.polygon,
     strokeColor: '#22d3ee',
     strokeWeight: 2,
     strokeOpacity: 0.95,
@@ -281,6 +607,9 @@ function drawBoundary() {
     zIndex: 5,
   })
   map.value.add(boundaryPolygon.value)
+  if (!boundaryVisible.value) {
+    try { boundaryPolygon.value.hide() } catch (e) {}
+  }
 }
 
 function buildingMarkerContent(name: string): string {
@@ -297,13 +626,20 @@ function buildBuildings() {
   buildingMarkerList.value.forEach(mk => { try { mk.setMap(null) } catch (e) {} })
   buildingMarkerList.value = []
 
-  centerParkBuildings.forEach(b => {
+  activeParkData.value.buildings.forEach(b => {
     const mk = new AMap.Marker({
       position: [b.lng, b.lat],
       content: buildingMarkerContent(b.name),
       offset: new AMap.Pixel(-9, -9),
       zIndex: 90,
       title: b.name,
+    })
+    // 悬停显示统计；面板仅点 X 关闭，不随鼠标移出自消失；切换楼栋时回到默认视图
+    mk.on('mouseover', () => {
+      if (props.blockFloating) return
+      hoveredBuilding.value = getBuildingStats(b.name)
+      searchQuery.value = ''
+      panelEnterprise.value = null
     })
     mk.setMap(map.value)
     buildingMarkerList.value.push(mk)
@@ -359,7 +695,7 @@ function buildMarkers() {
   markerMap.value.clear()
 
   mapMarkers.forEach(m => {
-    const [lng, lat] = markerToLngLat(m.x, m.y)
+    const [lng, lat] = markerToLngLat(m.x, m.y, m.zone)
     const mk = new AMap.Marker({
       position: [lng, lat],
       content: `<div class="park-marker">${markerIconSvg(m)}<div class="park-marker-name">${m.name}</div></div>`,
@@ -395,14 +731,41 @@ function applyBuildingVisibility() {
 
 watch(buildingsVisible, () => { if (mapReady.value) applyBuildingVisibility() })
 
+// 四至范围（园区边界线）显隐
+function applyBoundaryVisibility() {
+  if (!map.value || !boundaryPolygon.value) return
+  try { boundaryVisible.value ? boundaryPolygon.value.show() : boundaryPolygon.value.hide() } catch (e) {}
+}
+
+watch(boundaryVisible, () => { if (mapReady.value) applyBoundaryVisibility() })
+
+// 切换所属园区：重绘边界/楼栋/标记，复位悬停面板与选中态
+watch(() => props.activeZone, () => {
+  if (!mapReady.value) return
+  hoveredBuilding.value = null
+  searchQuery.value = ''
+  panelEnterprise.value = null
+  selectedMarker.value = null
+  showMonitorDetail.value = false
+  drawBoundary()
+  buildBuildings()
+  buildMarkers()
+  fitParkView()
+})
+
 onBeforeUnmount(() => {
   try { map.value?.destroy() } catch (e) {}
 })
 
 // ===== 标记点击 =====
 function handleMarkerClick(marker: MapMarkerData) {
+  if (props.blockFloating) return
   selectedMarker.value = marker
   dataTimestamp.value = formatNow()
+  // 打开标记面板时，自动关闭楼栋悬浮面板，避免同时出现两个面板
+  hoveredBuilding.value = null
+  searchQuery.value = ''
+  panelEnterprise.value = null
   // 大气监测站、排污口直接展开实时数据与趋势曲线，跳过“查看详细监测数据”按钮
   showMonitorDetail.value = marker.type === 'air_station' || marker.type === 'discharge_outlet'
   emit('selectMarker', marker)
@@ -411,7 +774,8 @@ function handleMarkerClick(marker: MapMarkerData) {
 function formatNow(): string {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  // 采集时间为整点，如 2026-10-29 11:00:00
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:00:00`
 }
 
 // 查找对应的监测点位数据
@@ -453,30 +817,165 @@ const monitorMetrics = computed(() => {
     })
 })
 
-// 趋势图数据
-const trendXData = Array.from({ length: 24 }, (_, i) => `${i}:00`)
+// ===== 趋势图：24 小时整点数据（默认）+ 历史趋势（近 3 个月逐日数据） =====
+const TREND_DAYS = 90
 const trendColors = ['#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#38bdf8', '#f472b6', '#a78bfa', '#facc15']
 
-// 为每个指标生成 24 小时趋势（围绕当前值波动）
-function genTrendSeries(base: number): number[] {
-  const variance = Math.max(base * 0.15, 0.5)
-  return Array.from({ length: 24 }, () => {
-    const v = base + (Math.random() - 0.5) * variance
-    return Math.round(v * 100) / 100
+// 趋势模式：24小时（默认）/ 历史趋势
+const trendMode = ref<'day' | 'history'>('day')
+
+function fmtDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function dateLabel(dateStr: string): string {
+  const [, m, d] = dateStr.split('-')
+  return `${Number(m)}月${Number(d)}日`
+}
+
+// 近 90 天日期列表（升序）
+const trendDates: string[] = Array.from({ length: TREND_DAYS }, (_, i) => {
+  const d = new Date()
+  d.setDate(d.getDate() - (TREND_DAYS - 1 - i))
+  return fmtDate(d)
+})
+
+// 24 小时整点数据（默认展示）
+const hourPoints = ref<{ hour: number; values: Record<string, number> }[]>([])
+const trendStartHour = ref(0)
+const trendEndHour = ref(23)
+
+// 历史趋势：近 3 个月逐日数据，默认展示近 7 天
+const datePoints = ref<{ date: string; values: Record<string, number> }[]>([])
+const trendStartDate = ref(trendDates[TREND_DAYS - 7])
+const trendEndDate = ref(trendDates[TREND_DAYS - 1])
+
+const metricKeys = computed(() => {
+  if (!monitorPoint.value) return []
+  const data = monitorPoint.value.latestData as Record<string, number | undefined>
+  return Object.keys(data).filter(k => data[k] !== 0 && data[k] !== undefined)
+})
+
+// 选定点位后生成 24 小时整点 + 近 90 天逐日两组趋势数据
+function buildTrend() {
+  const mp = monitorPoint.value
+  if (!mp) { hourPoints.value = []; datePoints.value = []; return }
+  const data = mp.latestData as Record<string, number | undefined>
+  const keys = Object.keys(data).filter(k => data[k] !== 0 && data[k] !== undefined)
+
+  hourPoints.value = Array.from({ length: 24 }, (_, hour) => {
+    const values: Record<string, number> = {}
+    for (const key of keys) {
+      const base = data[key] as number
+      const variance = Math.max(base * 0.15, 0.5)
+      values[key] = Math.round((base + (Math.random() - 0.5) * variance) * 100) / 100
+    }
+    return { hour, values }
+  })
+
+  datePoints.value = trendDates.map((date, idx) => {
+    const values: Record<string, number> = {}
+    for (const key of keys) {
+      const base = data[key] as number
+      const variance = Math.max(base * 0.12, 0.3)
+      const wave = Math.sin(idx / 6) * base * 0.06
+      values[key] = Math.round((base + wave + (Math.random() - 0.5) * variance) * 100) / 100
+    }
+    return { date, values }
   })
 }
 
-const trendSeries = computed(() => {
-  if (!monitorPoint.value) return []
-  const mp = monitorPoint.value
-  return Object.entries(mp.latestData)
-    .filter(([, v]) => v !== 0 && v !== undefined)
-    .map(([key, val], i) => ({
-      name: metricLabels[key]?.label || key,
-      data: genTrendSeries(val as number),
-      color: trendColors[i % trendColors.length],
-    }))
+// 切换点位时重置筛选并重新生成趋势
+watch(monitorPoint, () => {
+  trendStartHour.value = 0
+  trendEndHour.value = 23
+  trendStartDate.value = trendDates[TREND_DAYS - 7]
+  trendEndDate.value = trendDates[TREND_DAYS - 1]
+  buildTrend()
 })
+
+// 当前模式下的筛选数据（统一为 label / raw / values 供图表与导出使用）
+const activeTrendPoints = computed(() => {
+  if (trendMode.value === 'day') {
+    const start = Math.min(trendStartHour.value, trendEndHour.value)
+    const end = Math.max(trendStartHour.value, trendEndHour.value)
+    return hourPoints.value
+      .filter(p => p.hour >= start && p.hour <= end)
+      .map(p => ({ label: `${p.hour}:00`, raw: `${p.hour}:00`, values: p.values }))
+  }
+  const a = trendStartDate.value
+  const b = trendEndDate.value
+  const start = a <= b ? a : b
+  const end = a <= b ? b : a
+  return datePoints.value
+    .filter(p => p.date >= start && p.date <= end)
+    .map(p => ({ label: dateLabel(p.date), raw: p.date, values: p.values }))
+})
+
+const trendXData = computed(() => activeTrendPoints.value.map(p => p.label))
+
+const trendSeries = computed(() => {
+  if (!monitorPoint.value || !metricKeys.value.length) return []
+  return metricKeys.value.map((key, i) => ({
+    name: metricLabels[key]?.label || key,
+    data: activeTrendPoints.value.map(p => p.values[key] ?? 0),
+    color: trendColors[i % trendColors.length],
+    yAxisIndex: key === 'flow' || key === 'noise' ? 1 : 0,
+  }))
+})
+
+// 纵坐标轴：按点位类型给出刻度间隔与单位
+const trendYAxis = computed(() => {
+  const type = selectedMarker.value?.type
+  if (type === 'air_station') return { interval: 50, name: 'µg/m³' }
+  if (type === 'discharge_outlet') return { interval: 50, name: 'mg/L' }
+  return { interval: undefined, name: '' }
+})
+
+// 右轴：流量 / 噪声单独成轴，单位分别为 m³/h、dB
+const trendY2Name = computed(() => {
+  const type = selectedMarker.value?.type
+  if (type === 'discharge_outlet') return 'm³/h'
+  if (type === 'air_station' || type === 'odor') return 'dB'
+  return ''
+})
+
+// 各指标在筛选时段内的平均值
+const avgStats = computed(() => {
+  if (!activeTrendPoints.value.length || !monitorPoint.value) return []
+  const data = monitorPoint.value.latestData as Record<string, number | undefined>
+  return metricKeys.value.map(key => {
+    const sum = activeTrendPoints.value.reduce((s, p) => s + (p.values[key] ?? 0), 0)
+    const avg = sum / activeTrendPoints.value.length
+    const bv = data[key] ?? avg
+    const decimals = Number.isInteger(bv) ? 0 : Math.min((String(bv).split('.')[1] || '').length, 2)
+    return {
+      label: metricLabels[key]?.label || key,
+      value: avg.toFixed(decimals),
+      unit: metricLabels[key]?.unit || '',
+    }
+  })
+})
+
+// 导出筛选时段的趋势数据为 CSV（带 BOM，便于 Excel 打开中文）
+function exportTrend() {
+  if (!activeTrendPoints.value.length || !metricKeys.value.length) return
+  const keys = metricKeys.value
+  const isDay = trendMode.value === 'day'
+  const header = [isDay ? '时间' : '日期', ...keys.map(k => metricLabels[k]?.label || k)].join(',')
+  const rows = activeTrendPoints.value.map(p =>
+    [p.raw, ...keys.map(k => p.values[k] ?? '')].join(',')
+  )
+  const csv = '﻿' + [header, ...rows].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${monitorPoint.value?.name || '监测点位'}_${isDay ? '24小时' : '近3个月'}趋势.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 // ===== 辅助标签 =====
 const typeLabels: Record<string, string> = {
@@ -508,12 +1007,30 @@ const statusClass = computed(() => {
   return 'text-rose-400'
 })
 
-// ===== 图例数据（带 SVG 图标） =====
-const legendLayers: { type: string; label: string; svg: string }[] = [
+// ===== 图例数据（带 SVG 图标，按当前园区实际设施动态裁剪） =====
+const allLegendLayers: { type: string; label: string; svg: string }[] = [
+  { type: 'boundary', label: '四至范围', svg: '<svg width="16" height="14" viewBox="0 0 16 14"><rect x="2" y="2" width="12" height="10" rx="1" fill="#06b6d4" fill-opacity="0.06" stroke="#22d3ee" stroke-width="1.2"/></svg>' },
   { type: 'building', label: '楼栋', svg: '<svg width="16" height="14" viewBox="0 0 16 14"><rect x="2" y="1.5" width="12" height="11" rx="1" fill="#67e8f9" fill-opacity="0.25" stroke="#67e8f9" stroke-width="0.9"/><path d="M2,6.5 H14" stroke="#67e8f9" stroke-width="0.7"/><path d="M6,1.5 V6.5 M10,1.5 V6.5" stroke="#67e8f9" stroke-width="0.7"/><rect x="4" y="8" width="2.2" height="2" fill="#67e8f9" fill-opacity="0.7"/><rect x="9.8" y="8" width="2.2" height="2" fill="#67e8f9" fill-opacity="0.7"/></svg>' },
   { type: 'discharge_outlet', label: '排污口', svg: '<svg width="16" height="14" viewBox="0 0 16 14"><rect x="1" y="4.5" width="8" height="4" rx="1" fill="#06b6d4" fill-opacity="0.3" stroke="#06b6d4" stroke-width="0.6"/><path d="M9,4.5 L12,2 L12,11 L9,8.5 Z" fill="#06b6d4" fill-opacity="0.3" stroke="#06b6d4" stroke-width="0.6"/><ellipse cx="13.5" cy="6.5" rx="1.2" ry="1.8" fill="#06b6d4" fill-opacity="0.5"/></svg>' },
   { type: 'air_station', label: '大气监测站', svg: '<svg width="16" height="16" viewBox="0 0 16 16"><rect x="7" y="5" width="2" height="8" rx="0.5" fill="#06b6d4" fill-opacity="0.6"/><circle cx="8" cy="4.5" r="1.2" fill="#06b6d4" fill-opacity="0.5"/><path d="M8,4.5 Q3.5,0 5,0.5 Q8,3 8,4.5" fill="#06b6d4" fill-opacity="0.4"/><path d="M8,4.5 Q13,3.5 13,6 Q10,5 8,4.5" fill="#06b6d4" fill-opacity="0.4"/><rect x="5" y="13" width="6" height="1.5" rx="0.5" fill="#06b6d4" fill-opacity="0.3"/></svg>' },
 ]
+
+// 当前园区存在哪些标记类型（'all' 时取全部）
+const zoneMarkerTypes = computed(() => {
+  const z = props.activeZone
+  const markers = z === 'all' ? mapMarkers : mapMarkers.filter(m => m.zone === z)
+  return new Set(markers.map(m => m.type))
+})
+
+// 当前园区是否有带状态的监测标记（排污口/大气监测站），没有则不显示状态分级图例
+const hasStatusMarkers = computed(() =>
+  zoneMarkerTypes.value.has('discharge_outlet') || zoneMarkerTypes.value.has('air_station')
+)
+
+// 楼栋始终显示；排污口/大气监测站仅当当前园区有对应标记时显示
+const legendLayers = computed(() =>
+  allLegendLayers.filter(l => l.type === 'building' || l.type === 'boundary' || zoneMarkerTypes.value.has(l.type))
+)
 </script>
 
 <style scoped>
@@ -521,6 +1038,35 @@ const legendLayers: { type: string; label: string; svg: string }[] = [
 .pop-enter-from, .pop-leave-to { opacity: 0; transform: scale(0.92); }
 .drop-enter-active, .drop-leave-active { transition: opacity 0.15s ease, transform 0.15s ease; }
 .drop-enter-from, .drop-leave-to { opacity: 0; transform: translateY(-4px) scale(0.98); }
+
+/* 趋势图时间筛选下拉 */
+.trend-hour-select {
+  width: 64px !important;
+}
+.trend-date-select {
+  width: 96px !important;
+}
+.trend-hour-select :deep(.el-select__wrapper),
+.trend-date-select :deep(.el-select__wrapper) {
+  background-color: #0b2152 !important;
+  border: 1px solid rgba(6, 182, 212, 0.35) !important;
+  box-shadow: none !important;
+  border-radius: 4px;
+  height: 22px !important;
+  min-height: 22px !important;
+}
+.trend-hour-select :deep(.el-select__selected-item),
+.trend-hour-select :deep(.el-select__placeholder),
+.trend-date-select :deep(.el-select__selected-item),
+.trend-date-select :deep(.el-select__placeholder) {
+  color: #22d3ee !important;
+  font-family: monospace;
+  font-size: 11px;
+}
+.trend-hour-select :deep(.el-select__caret),
+.trend-date-select :deep(.el-select__caret) {
+  color: #22d3ee !important;
+}
 </style>
 
 <style>
@@ -554,7 +1100,7 @@ const legendLayers: { type: string; label: string; svg: string }[] = [
   align-items: center;
   gap: 2px;
   pointer-events: auto;
-  cursor: default;
+  cursor: pointer;
 }
 .park-building-icon {
   display: block;

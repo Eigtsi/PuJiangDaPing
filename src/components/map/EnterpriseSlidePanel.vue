@@ -4,7 +4,7 @@
       v-if="visible && enterprise"
       class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
     >
-      <div class="pointer-events-auto w-[580px] max-w-[90vw] max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-cyan-400 bg-[#09224f]/95 shadow-[0_8px_40px_rgba(6,182,212,0.5)] backdrop-blur-md">
+      <div class="pointer-events-auto w-[580px] max-w-[90vw] max-h-[85vh] flex flex-col overflow-hidden rounded-xl border border-cyan-400 bg-[#09224f]/60 shadow-[0_8px_40px_rgba(6,182,212,0.5)] backdrop-blur-md">
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-cyan-500/20 bg-gradient-to-r from-[#0c224f]/80 to-[#091a3d]/80">
         <div class="flex items-center gap-2.5">
@@ -24,7 +24,8 @@
             <div class="flex justify-between"><span class="text-slate-400">企业名称</span><span class="text-white font-bold">{{ enterprise.name }}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">统一社会信用代码</span><span class="text-cyan-300 font-mono">{{ enterprise.unifiedSocialCode }}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">法人代表</span><span class="text-slate-200">{{ enterprise.legalPerson }}</span></div>
-            <div class="flex justify-between"><span class="text-slate-400">环保负责人</span><span class="text-slate-200">{{ enterprise.environmentalContact }} {{ enterprise.phone }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">联系人</span><span class="text-slate-200">{{ enterprise.environmentalContact }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">联系电话</span><span class="text-cyan-300 font-mono">{{ enterprise.phone }}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">所属行业</span><span class="text-cyan-300">{{ enterprise.industryDetail }}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">入驻时间</span><span class="text-slate-200">{{ enterprise.entryDate }}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">所在位置</span><span class="text-slate-200">{{ enterprise.building }} {{ enterprise.floor }}</span></div>

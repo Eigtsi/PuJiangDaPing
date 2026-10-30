@@ -1,7 +1,9 @@
 <template>
   <div class="relative min-h-screen w-screen bg-gradient-to-b from-[#051230] via-[#040c24] to-[#020718] overflow-hidden">
-    <!-- If screen is large, wrap inside a fixed 16:9 container, scaling to fit the resolution -->
-    <div 
+    <!-- 1920×1080 设计稿，按视口宽/高各自缩放填满（横向满宽、纵向压到视口高度）——即「昨天版本」的填满效果。
+         关键：不再加 will-change / backface-visibility。这两个属性会强制 GPU 合成层，
+         是 Intel 核显“关闭控制台整屏黑”的元凶；只保留 transform:scale 本身即可。 -->
+    <div
       :style="isLargeScreen ? {
         width: '1920px',
         height: '1080px',
@@ -13,8 +15,8 @@
         flexShrink: 0
       } : undefined"
       :class="[
-        isLargeScreen 
-          ? 'w-[1920px] h-[1080px] p-4 pb-3' 
+        isLargeScreen
+          ? 'w-[1920px] h-[1080px] p-4 pb-3'
           : 'relative w-full h-full min-h-screen p-4 md:p-6',
         'text-slate-100 font-sans select-none tech-grid-bg flex flex-col justify-between overflow-hidden'
       ]"
@@ -31,20 +33,19 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 
+const isLargeScreen = ref(true);
 const scaleX = ref(1);
 const scaleY = ref(1);
-const isLargeScreen = ref(true);
 
 const handleResize = () => {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  // Below 1024px we render dynamic scrolling layout for mobile usability
-  if (width < 1024) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (w < 1024) {
     isLargeScreen.value = false;
   } else {
     isLargeScreen.value = true;
-    scaleX.value = width / 1920;
-    scaleY.value = height / 1080;
+    scaleX.value = w / 1920;
+    scaleY.value = h / 1080;
   }
 };
 

@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'tech-panel bg-[#0a1e4a]/70 border border-cyan-500/35 rounded-lg relative transition-all duration-300 flex flex-col min-h-0',
+      'tech-panel bg-[#0a1e4a]/60 border border-cyan-500/35 rounded-lg relative transition-all duration-300 flex flex-col min-h-0',
       isLargeScreen ? 'p-4 font-medium' : 'p-4',
       collapsible && !collapsed ? 'flex-1' : '',
       collapsible && collapsed ? 'overflow-hidden' : '',

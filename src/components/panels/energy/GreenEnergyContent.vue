@@ -5,7 +5,7 @@
       <div>
         <span class="text-[13px] text-slate-350 block mb-0.5 font-bold">当月绿色代收代缴</span>
         <div class="flex items-baseline gap-1.5">
-          <span :class="[isLargeScreen ? 'text-2xl' : 'text-3xl', 'font-black font-mono text-cyan-300 digital-glow']">¥928,450</span>
+          <span :class="[isLargeScreen ? 'text-2xl' : 'text-3xl', 'font-black font-mono text-cyan-300 digital-glow']">¥928450</span>
         </div>
       </div>
       <div class="text-right text-[13px] text-slate-350 font-medium font-sans">

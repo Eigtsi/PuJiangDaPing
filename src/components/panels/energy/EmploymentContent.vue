@@ -88,7 +88,7 @@
 
     <div class="bg-[#051330]/40 p-2 rounded border border-cyan-500/10 flex justify-between items-center bg-opacity-70 text-xs">
       <span class="text-slate-400 text-sm">累计用工服务：</span>
-      <span class="text-cyan-250 font-bold font-mono text-sm">年度对接 1,280 人 | 满意度 99.6%</span>
+      <span class="text-cyan-250 font-bold font-mono text-sm">年度对接 1280 人 | 满意度 99.6%</span>
     </div>
 
     <div :class="['mt-2', isLargeScreen ? 'mt-2' : 'mt-4']">

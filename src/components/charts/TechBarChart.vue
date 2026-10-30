@@ -10,6 +10,7 @@ interface SeriesItem {
   name: string
   data: number[]
   color?: string
+  colors?: string[]          // 每根柱子的颜色（按 dataIndex 取用，优先级高于 color）
   stack?: string             // 相同 stack 的系列会堆叠
 }
 
@@ -17,6 +18,9 @@ interface Props {
   xData: string[]
   series: SeriesItem[]
   height?: number
+  yName?: string
+  yMin?: number
+  yInterval?: number
   stacked?: boolean
   horizontal?: boolean
   showLegend?: boolean
@@ -63,6 +67,10 @@ const buildOption = (): echarts.EChartsOption => {
     yAxis: {
       type: isH ? 'category' as const : 'value' as const,
       data: isH ? props.xData : undefined,
+      name: props.yName,
+      nameTextStyle: { color: '#94a3b8', fontSize: 10 },
+      min: props.yMin,
+      interval: props.yInterval,
       splitLine: { lineStyle: { color: 'rgba(6, 182, 212, 0.1)' } },
       axisLine: { show: false },
       axisLabel: { color: '#cbd5e1', fontSize: 8 },
@@ -74,7 +82,18 @@ const buildOption = (): echarts.EChartsOption => {
       data: s.data,
       barWidth: props.stacked ? '40%' : `${Math.max(20, 60 / props.series.length)}%`,
       itemStyle: {
-        color: s.color || defaultColors[i % defaultColors.length],
+        color: (params: { dataIndex: number }) => {
+          const di = params.dataIndex
+          const base = s.colors?.[di] || s.color || defaultColors[(props.series.length === 1 ? di : i) % defaultColors.length]
+          // 提供逐柱配色时，加一层纵向渐变让柱体更有质感
+          if (s.colors && s.colors[di]) {
+            return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: base },
+              { offset: 1, color: base + '33' },
+            ])
+          }
+          return base
+        },
         borderRadius: props.stacked && i === props.series.length - 1 ? [2, 2, 0, 0] : 0,
       },
     })),

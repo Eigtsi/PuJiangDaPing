@@ -3,7 +3,7 @@
 
     <!-- Dynamic custom Toast notification -->
     <Transition name="fade">
-      <div v-if="customToast" class="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 bg-[#09224f] border border-cyan-400 text-cyan-300 px-6 py-3 rounded-md shadow-[0_0_15px_rgba(6,182,212,0.5)] flex items-center gap-2 font-medium">
+      <div v-if="customToast" class="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 bg-[#09224f]/60 border border-cyan-400 text-cyan-300 px-6 py-3 rounded-md shadow-[0_0_15px_rgba(6,182,212,0.5)] flex items-center gap-2 font-medium">
         <Shield class="animate-spin text-cyan-400 w-5 h-5" />
         <span>{{ customToast }}</span>
       </div>
@@ -12,8 +12,10 @@
     <!-- ============ 地图底座（左右各留 120px 留白，上下留标题/导航，铺在面板之后） ============ -->
     <div class="absolute left-[120px] right-[120px] top-[96px] bottom-5 overflow-hidden bg-[#040e29] rounded-lg border border-cyan-400/25 shadow-[0_0_50px_rgba(0,242,255,0.08)]">
       <InteractiveMap
+        ref="mapRef"
         :bgImage="industrialParkView"
         :activeZone="mapFilterZone"
+        :blockFloating="expandedIndex !== null"
         @selectEnterprise="handleSelectEnterprise"
         @selectMarker="handleSelectMarker"
       />
@@ -91,15 +93,17 @@
 
     <!-- ============ 左侧悬浮浮层（叠在地图左边缘，重点展示） ============ -->
     <div class="absolute left-[120px] top-[96px] bottom-5 z-20 w-[420px] flex flex-col gap-3 pr-1 min-h-0">
-      <TechPanel :title="panelTitles[0]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="expandedIndex = 0">
+      <TechPanel v-if="panelComponents[0]" :title="panelTitles[0]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="handleExpand(0)">
         <template #icon><component :is="panelIcons[0]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[0]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel :title="panelTitles[1]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="expandedIndex = 1">
+      <div v-else class="flex-1 min-h-0"></div>
+      <TechPanel v-if="panelComponents[1]" :title="panelTitles[1]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="handleExpand(1)">
         <template #icon><component :is="panelIcons[1]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[1]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel v-if="panelComponents[2]" :title="panelTitles[2]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="expandedIndex = 2">
+      <div v-else class="flex-1 min-h-0"></div>
+      <TechPanel v-if="panelComponents[2]" :title="panelTitles[2]" :isLargeScreen="isLargeScreen" :className="'flex-1 min-h-0'" @expand="handleExpand(2)">
         <template #icon><component :is="panelIcons[2]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[2]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
@@ -108,19 +112,19 @@
 
     <!-- ============ 右侧悬浮浮层（叠在地图右边缘，重点展示） ============ -->
     <div class="absolute right-[120px] top-[96px] bottom-5 z-20 w-[420px] flex flex-col gap-3 pl-1 min-h-0">
-      <TechPanel v-if="panelComponents[3]" :title="panelTitles[3]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" :autoHeight="activeMainTab === 'environment'" @expand="expandedIndex = 3">
+      <TechPanel v-if="panelComponents[3]" :title="panelTitles[3]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" :autoHeight="activeMainTab === 'environment'" @expand="handleExpand(3)">
         <template #icon><component :is="panelIcons[3]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[3]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel v-if="panelComponents[4]" :title="panelTitles[4]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 4">
+      <TechPanel v-if="panelComponents[4]" :title="panelTitles[4]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="handleExpand(4)">
         <template #icon><component :is="panelIcons[4]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[4]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel v-if="panelComponents[5]" :title="panelTitles[5]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 5">
+      <TechPanel v-if="panelComponents[5]" :title="panelTitles[5]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="handleExpand(5)">
         <template #icon><component :is="panelIcons[5]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[5]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
-      <TechPanel v-if="panelComponents[6]" :title="panelTitles[6]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="expandedIndex = 6">
+      <TechPanel v-if="panelComponents[6]" :title="panelTitles[6]" :isLargeScreen="isLargeScreen" :className="rightPanelClass" @expand="handleExpand(6)">
         <template #icon><component :is="panelIcons[6]" class="w-4 h-4 text-cyan-400" /></template>
         <component :is="panelComponents[6]" :isLargeScreen="isLargeScreen" @toast="toastMessage" />
       </TechPanel>
@@ -175,9 +179,9 @@ import 'moment/dist/locale/zh-cn'
 import CryptoJS from 'crypto-js'
 import {
   Building, Droplets, Wind, Calendar, Sun, ArrowLeftRight,
-  Trash2, Sliders, Shield, Briefcase, LayoutDashboard,
-  Bell, Coins, Car, LifeBuoy, Users, X,
-  Zap, Flame, Waves
+  Trash2, Sliders, Shield, LayoutDashboard,
+  Coins, Car, X,
+  Zap, Flame, Waves, BatteryCharging
 } from 'lucide-vue-next'
 
 import TechPanel from './TechPanel.vue'
@@ -185,6 +189,7 @@ import TechPanel from './TechPanel.vue'
 // ===== Map components =====
 import InteractiveMap from './map/InteractiveMap.vue'
 import EnterpriseSlidePanel from './map/EnterpriseSlidePanel.vue'
+import { mapMarkers } from '../data/mapData'
 
 // ===== Panel imports — General =====
 import ParkOverviewContent from './panels/general/ParkOverviewContent.vue'
@@ -198,8 +203,8 @@ import GasUsageContent from './panels/general/GasUsageContent.vue'
 import PropertyAnalysisContent from './panels/operation/PropertyAnalysisContent.vue'
 import RentAnalysisContent from './panels/operation/RentAnalysisContent.vue'
 import ParkingAnalysisContent from './panels/operation/ParkingAnalysisContent.vue'
-// ===== Panel imports — Energy =====
-import EmptyContent from './panels/energy/EmptyContent.vue'
+import SolarPowerContent from './panels/operation/SolarPowerContent.vue'
+import EnergyStorageContent from './panels/operation/EnergyStorageContent.vue'
 
 // ==================== ASSETS ====================
 const industrialParkView = '/src/assets/images/industrial_park_view_1779843805340.png'
@@ -250,12 +255,11 @@ onMounted(() => { handleResize(); window.addEventListener('resize', handleResize
 onUnmounted(() => { window.removeEventListener('resize', handleResize) })
 
 // ==================== TAB & CATEGORY ====================
-type TabKey = 'general' | 'environment' | 'operation' | 'energy'
+type TabKey = 'general' | 'environment' | 'operation'
 const mainTabs: { key: TabKey; label: string; icon: any }[] = [
   { key: 'general', label: '综合管理', icon: LayoutDashboard },
   { key: 'environment', label: '环保管理', icon: Shield },
   { key: 'operation', label: '智慧运营', icon: Sliders },
-  { key: 'energy', label: '企业服务', icon: Briefcase },
 ]
 
 const setCategory = (cat: 'park' | 'enterprise') => {
@@ -277,42 +281,84 @@ const setPark = (park: 'center' | 'east' | 'west') => {
   toastMessage(`已切换所属园区：${parkName}`)
 }
 
+// 当前园区是否有大气环境监测站（以地图标记为准），没有则不显示「大气环境监测」面板
+const hasAirStations = computed(() =>
+  mapMarkers.some(m => m.type === 'air_station' && m.zone === activePark.value)
+)
+
+// 当前园区是否有排污口（以地图标记为准），没有则不显示「水环境监测」面板
+const hasDischargeOutlet = computed(() =>
+  mapMarkers.some(m => m.type === 'discharge_outlet' && m.zone === activePark.value)
+)
+
 // ==================== PANEL TITLES & ICONS ====================
 // panelTitles[0-6] = 7 panels left-to-right, top-to-bottom
-const panelTitles = computed(() => {
-  const t = activeMainTab.value
-  const titles: Record<string, string[]> = {
-    general: ['园区概况', '大气环境监测', '水环境监测', '用水分析', '用电分析', '供气分析'],
-    environment: ['大气环境监测', '水环境监测', '', '固废处置监管', '', '', ''],
-    operation: ['物业分析', '租金分析', '停车分析', '用水分析', '用电分析', '供气分析', ''],
-    energy: ['', '', '', '', '', '', ''],
+// ==================== 面板槽位（左 3 + 右 4，索引 0-2 左、3-6 右） ====================
+// 面板按园区实际监测设施动态裁剪：无大气监测站 → 隐藏「大气环境监测」；无排污口 → 隐藏「水环境监测」
+type PanelDef = { title: string; icon: any; comp: any }
+
+function buildPanels(leftDefs: (PanelDef | null)[], rightDefs: (PanelDef | null)[]): { titles: string[]; icons: any[]; comps: any[] } {
+  const left = leftDefs.filter((d): d is PanelDef => !!d)
+  const right = rightDefs.filter((d): d is PanelDef => !!d)
+  const L: (PanelDef | null)[] = [...left]
+  const R: (PanelDef | null)[] = [...right]
+  while (L.length < 3) L.push(null)
+  while (R.length < 4) R.push(null)
+  const all = [...L, ...R]
+  return {
+    titles: all.map(d => d?.title ?? ''),
+    icons: all.map(d => d?.icon ?? null),
+    comps: all.map(d => d?.comp ?? null),
   }
-  return titles[t] || titles.general
+}
+
+const panelDefs = computed(() => {
+  const t = activeMainTab.value
+  const hasAir = hasAirStations.value
+  const hasOutlet = hasDischargeOutlet.value
+
+  if (t === 'general') {
+    return buildPanels(
+      [
+        { title: '园区概况', icon: Building, comp: ParkOverviewContent },
+        hasAir ? { title: '大气环境监测', icon: Wind, comp: AirMonitorContent } : null,
+        hasOutlet ? { title: '水环境监测', icon: Droplets, comp: WaterEnvContent } : null,
+      ],
+      [
+        { title: '用水分析', icon: Waves, comp: WaterUsageContent },
+        { title: '用电分析', icon: Zap, comp: ElectricityUsageContent },
+      ],
+    )
+  }
+  if (t === 'environment') {
+    return buildPanels(
+      [
+        hasAir ? { title: '大气环境监测', icon: Wind, comp: AirMonitorContent } : null,
+        hasOutlet ? { title: '水环境监测', icon: Droplets, comp: WaterEnvContent } : null,
+      ],
+      [
+        { title: '固废处置监管', icon: Trash2, comp: SolidWasteContent },
+      ],
+    )
+  }
+  // operation（智慧运营）
+  return buildPanels(
+    [
+      { title: '物业分析', icon: Building, comp: PropertyAnalysisContent },
+      { title: '租金分析', icon: Coins, comp: RentAnalysisContent },
+      { title: '停车分析', icon: Car, comp: ParkingAnalysisContent },
+    ],
+    [
+      { title: '光伏发电', icon: Sun, comp: SolarPowerContent },
+      { title: '储能分析', icon: BatteryCharging, comp: EnergyStorageContent },
+      { title: '供气分析', icon: Flame, comp: GasUsageContent },
+    ],
+  )
 })
 
-const panelIcons = computed(() => {
-  const t = activeMainTab.value
-  const icons: Record<string, any[]> = {
-    general: [Building, Wind, Droplets, Waves, Zap, Flame],
-    environment: [Wind, Droplets, null, Trash2, null, null, null],
-    operation: [Building, Coins, Car, Waves, Zap, Flame, null],
-    energy: [Briefcase, Bell, Coins, LifeBuoy, Users, Building, Building],
-  }
-  return icons[t] || icons.general
-})
-
-// ==================== 面板内容映射（面板槽位与“展开”弹窗共用） ====================
-// panelComponents[0-6] 对应左 3 + 右 4 个面板；energy 页第 7 面板为 null（不渲染）
-const panelComponents = computed(() => {
-  const t = activeMainTab.value
-  const map: Record<string, any[]> = {
-    general: [ParkOverviewContent, AirMonitorContent, WaterEnvContent, WaterUsageContent, ElectricityUsageContent, GasUsageContent],
-    environment: [AirMonitorContent, WaterEnvContent, null, SolidWasteContent, null, null, null],
-    operation: [PropertyAnalysisContent, RentAnalysisContent, ParkingAnalysisContent, WaterUsageContent, ElectricityUsageContent, GasUsageContent, null],
-    energy: [EmptyContent, EmptyContent, EmptyContent, EmptyContent, EmptyContent, EmptyContent, null],
-  }
-  return map[t] || map.general
-})
+const panelTitles = computed(() => panelDefs.value.titles)
+const panelIcons = computed(() => panelDefs.value.icons)
+const panelComponents = computed(() => panelDefs.value.comps)
 
 // 右侧面板在「环保管理」页高亮描边；环保页只有固废处置监管一个面板，按内容自适应高度
 const rightPanelClass = computed(() =>
@@ -323,6 +369,13 @@ const rightPanelClass = computed(() =>
 
 // 展开的面板索引（null = 未展开），点击面板右上角放大按钮弹出全量内容
 const expandedIndex = ref<number | null>(null)
+const mapRef = ref<InstanceType<typeof InteractiveMap> | null>(null)
+
+// 点击放大按钮：先关闭地图上的悬浮面板，再弹出全量内容，避免两个图框同时显示
+function handleExpand(index: number) {
+  mapRef.value?.closeFloatingPanels()
+  expandedIndex.value = index
+}
 
 // ==================== MAP INTERACTION ====================
 const handleSelectEnterprise = (id: string) => {
@@ -330,6 +383,8 @@ const handleSelectEnterprise = (id: string) => {
   toastMessage('正在加载企业一企一档...')
 }
 const handleSelectMarker = (marker: any) => {
+  // 大气监测站、排污口点击后直接展开实时数据，不弹「已选中」提示
+  if (marker.type === 'air_station' || marker.type === 'discharge_outlet') return
   toastMessage(`已选中：${marker.name}`)
 }
 const closeEnterprisePanel = () => {

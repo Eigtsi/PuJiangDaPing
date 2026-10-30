@@ -185,3 +185,51 @@ export const currentMonthEnergy: {
   totalGas: 95000,
   monthOnMonthChange: 6.9
 }
+
+// ---------------------------------------------------------------------------
+// 光伏电站 / 储能系统 概况（智慧运营·光伏发电 & 储能分析 面板）
+// ---------------------------------------------------------------------------
+
+export interface SolarOverview {
+  capacity: number          // 装机容量 kWp
+  selfUseRate: number       // 自发自用率 %
+  gridPrice: number         // 余电上网电价 元/kWh
+  co2Factor: number         // 度电碳减排 kgCO2/kWh
+}
+
+export const solarOverview: SolarOverview = {
+  capacity: 1200,
+  selfUseRate: 82.5,
+  gridPrice: 0.42,
+  co2Factor: 0.785
+}
+
+export interface StorageOverview {
+  capacity: number           // 储能容量 kWh
+  roundTripEfficiency: number // 充放电综合效率 %
+  dailyCycles: number        // 日均充放次数
+  peakValleyPrice: number    // 峰谷价差 元/kWh
+}
+
+export const storageOverview: StorageOverview = {
+  capacity: 4800,
+  roundTripEfficiency: 90.5,
+  dailyCycles: 1,
+  peakValleyPrice: 0.7
+}
+
+// ---------------------------------------------------------------------------
+// 光伏/储能 年度筛选选项（2025 为实际数据基准，2024/2026 为估算倍数）
+// ---------------------------------------------------------------------------
+
+export interface EnergyYearOption {
+  key: string
+  label: string
+  factor: number // 相对 2025 全年基准的倍数
+}
+
+export const energyYearOptions: EnergyYearOption[] = [
+  { key: '2024', label: '2024年', factor: 0.92 },
+  { key: '2025', label: '2025年', factor: 1.0 },
+  { key: '2026', label: '2026年', factor: 1.08 }
+]

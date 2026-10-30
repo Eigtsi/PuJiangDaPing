@@ -4,7 +4,7 @@
  * 西部(x:10-35) | 中部(x:38-62) | 东部(x:65-90)
  */
 
-import { centerParkCenter, centerParkBounds, centerParkPolygon } from './parkKml'
+import { centerParkCenter, centerParkBounds, centerParkPolygon, eastParkBounds, westParkBounds } from './parkKml'
 
 export type MarkerType = 'enterprise' | 'fluoride_pool' | 'discharge_outlet' | 'air_station' | 'rain_outlet' | 'voc' | 'odor' | 'waste_storage' | 'weigh_station'
 export type MarkerStatus = 'normal' | 'warning' | 'alert'
@@ -62,8 +62,6 @@ export const mapMarkers: MapMarker[] = [
   { id: 'mk-f-01', type: 'fluoride_pool', name: '华兴氟化物预处理池', x: 27, y: 35, zone: 'west', status: 'normal', monitoringPointId: 'fp-001' },
   { id: 'mk-f-02', type: 'fluoride_pool', name: '恒泰氟化物预处理池', x: 23, y: 47, zone: 'west', status: 'alert', monitoringPointId: 'fp-002' },
   { id: 'mk-f-03', type: 'fluoride_pool', name: '恒锐氟化物预处理池', x: 31, y: 56, zone: 'west', status: 'warning', monitoringPointId: 'fp-007' },
-  { id: 'mk-d-01', type: 'discharge_outlet', name: '西部1号排口', x: 33, y: 40, zone: 'west', status: 'normal', monitoringPointId: 'do-002' },
-  { id: 'mk-d-02', type: 'discharge_outlet', name: '西部2号排口', x: 14, y: 46, zone: 'west', status: 'warning', monitoringPointId: 'do-001' },
   { id: 'mk-v-01', type: 'voc', name: '西部VOCs监测站', x: 24, y: 30, zone: 'west', status: 'normal', monitoringPointId: 'voc-001' },
   { id: 'mk-r-01', type: 'rain_outlet', name: '西部雨排口', x: 34, y: 55, zone: 'west', status: 'normal', monitoringPointId: 'ro-001' },
 
@@ -85,9 +83,10 @@ export const mapMarkers: MapMarker[] = [
   { id: 'mk-c-14', type: 'enterprise', name: '金华诚信水晶清洗', x: 60, y: 45, zone: 'center', status: 'normal', enterpriseId: 'ent-026', buildingId: 'bld-g' },
 
   // 中部监测点（仅 1 个排污口 + 2 个厂界废气监测站）
-  { id: 'mk-d-03', type: 'discharge_outlet', name: '中部排污口', x: 51, y: 50, zone: 'center', status: 'normal', monitoringPointId: 'do-003' },
-  { id: 'mk-a-01', type: 'air_station', name: '厂界废气监测站1', x: 45, y: 18, zone: 'center', status: 'normal', monitoringPointId: 'as-001' },
-  { id: 'mk-a-02', type: 'air_station', name: '厂界废气监测站2', x: 52, y: 72, zone: 'center', status: 'normal', monitoringPointId: 'as-002' },
+  // 按楼栋定位：排污口在 22#/8# 中间空地；废气监测站1在综合楼A、2在G号楼
+  { id: 'mk-d-03', type: 'discharge_outlet', name: '中部排污口', x: 16.8, y: 64.82, zone: 'center', status: 'normal', monitoringPointId: 'do-003' },
+  { id: 'mk-a-01', type: 'air_station', name: '厂界废气监测站1', x: 72.45, y: 54.83, zone: 'center', status: 'normal', monitoringPointId: 'as-001' },
+  { id: 'mk-a-02', type: 'air_station', name: '厂界废气监测站2', x: 9.73, y: 89.26, zone: 'center', status: 'normal', monitoringPointId: 'as-002' },
 
   // ===== 东部区块 (x: 65-90) =====
   // 企业标记 - 东部
@@ -107,8 +106,8 @@ export const mapMarkers: MapMarker[] = [
   { id: 'mk-f-08', type: 'fluoride_pool', name: '利达氟化物预处理池', x: 83, y: 53, zone: 'east', status: 'alert', monitoringPointId: 'fp-006' },
   { id: 'mk-f-09', type: 'fluoride_pool', name: '光大氟化物预处理池', x: 67, y: 45, zone: 'east', status: 'normal', monitoringPointId: 'fp-009' },
   { id: 'mk-f-10', type: 'fluoride_pool', name: '嘉诚氟化物预处理池', x: 71, y: 50, zone: 'east', status: 'normal', monitoringPointId: 'fp-010' },
-  { id: 'mk-d-05', type: 'discharge_outlet', name: '东部1号排口', x: 76, y: 48, zone: 'east', status: 'normal', monitoringPointId: 'do-004' },
-  { id: 'mk-d-06', type: 'discharge_outlet', name: '东部2号排口', x: 68, y: 56, zone: 'east', status: 'normal', monitoringPointId: 'do-006' },
+  // 东部排污口：位于 35# 正下方（园区内）
+  { id: 'mk-d-05', type: 'discharge_outlet', name: '东部排口', x: 58.2, y: 70, zone: 'east', status: 'normal', monitoringPointId: 'do-004' },
   { id: 'mk-v-03', type: 'voc', name: '东部VOCs监测站', x: 78, y: 35, zone: 'east', status: 'normal', monitoringPointId: 'voc-003' },
   { id: 'mk-o-02', type: 'odor', name: '西北恶臭监测点', x: 84, y: 45, zone: 'east', status: 'warning', monitoringPointId: 'od-002' },
   { id: 'mk-o-03', type: 'odor', name: '西南恶臭监测点', x: 70, y: 60, zone: 'east', status: 'normal', monitoringPointId: 'od-003' },
@@ -144,8 +143,10 @@ export const parkBoundaryPath: [number, number][] = centerParkPolygon
 
 // 百分比坐标 (x, y ∈ 0-100) → 高德经纬度 [lng, lat]
 // x 从左(西)到右(东)递增；y 从上(北)到下(南)递增
-export function markerToLngLat(x: number, y: number): [number, number] {
-  const lng = parkBounds.west + (x / 100) * (parkBounds.east - parkBounds.west)
-  const lat = parkBounds.north - (y / 100) * (parkBounds.north - parkBounds.south)
+// zone 决定使用哪个园区的 KML 包围盒
+export function markerToLngLat(x: number, y: number, zone: 'west' | 'center' | 'east' = 'center'): [number, number] {
+  const b = zone === 'east' ? eastParkBounds : zone === 'west' ? westParkBounds : centerParkBounds
+  const lng = b.west + (x / 100) * (b.east - b.west)
+  const lat = b.north - (y / 100) * (b.north - b.south)
   return [lng, lat]
 }

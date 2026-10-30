@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between text-[13px] text-cyan-300 font-bold">
       <span>🏆 年度惠企扶持资金与红利</span>
-      <span class="text-[#2dd4bf] font-semibold">已拨付: 2,450万</span>
+      <span class="text-[#2dd4bf] font-semibold">已拨付: 2450万</span>
     </div>
 
     <!-- Policy cards -->
@@ -35,7 +35,7 @@
       <div class="bg-[#0b2152]/40 p-1.5 px-2 rounded border border-cyan-500/10 flex justify-between items-center gap-2">
         <div>
           <span class="text-cyan-200 font-bold text-[13px] block">人才引进安居补贴</span>
-          <span class="text-slate-400 text-xs block">高级技工及以上人才，给予租房补贴 1,500 元/月，连续 3 年</span>
+          <span class="text-slate-400 text-xs block">高级技工及以上人才，给予租房补贴 1500 元/月，连续 3 年</span>
         </div>
         <span class="text-cyan-300 font-bold text-[13px] shrink-0">申报中</span>
       </div>

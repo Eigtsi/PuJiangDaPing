@@ -1,11 +1,17 @@
 <template>
   <div :class="[isLargeScreen ? 'space-y-2' : 'space-y-3.5']">
-    <!-- 时间筛选（仅到月份） -->
+    <!-- 时间筛选（月/年切换） -->
     <div class="flex items-center justify-between">
-      <span class="text-xs text-slate-300 whitespace-nowrap shrink-0">统计月份</span>
-      <el-select v-model="selectedMonth" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
-        <el-option v-for="m in monthOptions" :key="m.key" :label="m.label" :value="m.key" />
-      </el-select>
+      <div class="flex items-center rounded border border-cyan-500/30 p-0.5 shrink-0">
+        <button type="button" @click="setGranularity('month')" :class="['px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer', granularity === 'month' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-slate-200']">月</button>
+        <button type="button" @click="setGranularity('year')" :class="['px-2 py-0.5 rounded-sm text-xs font-medium transition cursor-pointer', granularity === 'year' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-slate-200']">年</button>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-slate-300 whitespace-nowrap shrink-0">{{ granularity === 'month' ? '统计月份' : '统计年份' }}</span>
+        <el-select v-model="selectedPeriod" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
+          <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
+        </el-select>
+      </div>
     </div>
 
     <!-- KPI 3 项 -->
@@ -28,7 +34,7 @@
     <div :class="[isLargeScreen ? '' : 'mt-1']">
       <div class="flex items-center justify-between mb-1 text-amber-300 font-bold">
         <span :class="[isLargeScreen ? 'text-sm' : 'text-base']">🔥 用气结构</span>
-        <span :class="['text-slate-300 font-semibold', isLargeScreen ? 'text-xs' : 'text-sm']">月用气量 {{ d.monthUsage }} 万m³</span>
+        <span :class="['text-slate-300 font-semibold', isLargeScreen ? 'text-xs' : 'text-sm']">{{ granularity === 'month' ? '月用气量' : '年用气量' }} {{ d.monthUsage }} 万m³</span>
       </div>
       <div class="flex items-center gap-[52px]">
         <div :class="[isLargeScreen ? 'w-24 h-24' : 'w-28 h-28', 'flex-shrink-0']">
@@ -75,7 +81,7 @@
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import TechPieChart from '../../charts/TechPieChart.vue'
-import { parkProfiles, monthOptions, type ParkKey } from '../../../data/parkMonitor'
+import { parkProfiles, monthOptions, yearOptions, type ParkKey } from '../../../data/parkMonitor'
 
 withDefaults(defineProps<{
   isLargeScreen?: boolean
@@ -91,12 +97,21 @@ const store = useStore()
 const activePark = computed(() => store.state.activePark as ParkKey)
 const p = computed(() => parkProfiles[activePark.value])
 
-const selectedMonth = ref(monthOptions[monthOptions.length - 1].key)
-const monthFactor = computed(() => monthOptions.find(m => m.key === selectedMonth.value)?.factor ?? 1)
+const granularity = ref<'month' | 'year'>('month')
+const selectedPeriod = ref(monthOptions[monthOptions.length - 1].key)
+
+const periodOptions = computed(() => (granularity.value === 'month' ? monthOptions : yearOptions))
+const factor = computed(() => periodOptions.value.find(o => o.key === selectedPeriod.value)?.factor ?? 1)
+
+function setGranularity(g: 'month' | 'year') {
+  granularity.value = g
+  const opts = g === 'month' ? monthOptions : yearOptions
+  selectedPeriod.value = opts[opts.length - 1].key
+}
 
 const d = computed(() => {
   const g = p.value.gas
-  const f = monthFactor.value
+  const f = factor.value
   return {
     receivable: +(g.receivable * f).toFixed(1),
     received: +(g.received * f).toFixed(1),
