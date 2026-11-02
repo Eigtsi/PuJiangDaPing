@@ -11,6 +11,7 @@
         <el-select v-model="selectedPeriod" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
           <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
         </el-select>
+        <ExportRangeButton title="用电分析" :default-range="exportRange" @export="handleExport" />
       </div>
     </div>
 
@@ -100,6 +101,8 @@
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import TechPieChart from '../../charts/TechPieChart.vue'
+import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import { downloadExcel } from '../../../utils/exportExcel'
 import { parkProfiles, monthOptions, yearOptions, type ParkKey } from '../../../data/parkMonitor'
 
 withDefaults(defineProps<{
@@ -108,7 +111,7 @@ withDefaults(defineProps<{
   isLargeScreen: true
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'toast', msg: string): void
 }>()
 
@@ -167,6 +170,33 @@ function fmtSig(n: number, digits = 3): string {
   if (!n) return '0'
   const decimals = Math.max(0, digits - Math.ceil(Math.log10(Math.abs(n))))
   return n.toFixed(decimals)
+}
+
+// ===== 导出（自由选择日期范围） =====
+const exportRange: [string, string] = [monthOptions[0].key, monthOptions[monthOptions.length - 1].key]
+
+function handleExport(start: string, end: string) {
+  const e = p.value.electricity
+  const months = monthOptions.filter(o => o.key >= start && o.key <= end)
+  if (!months.length) {
+    emit('toast', '所选日期范围内暂无用电数据')
+    return
+  }
+  const volNames = e.sourceSplit.map((_, i) => `${levelNames[i] ?? ''}（kWh）`)
+  const feeNames = e.feeTotals.map(s => `${s.name}（万元）`)
+  const headers = ['月份', '用电量（kWh）', ...volNames, '应收金额（万元）', ...feeNames]
+  const rows = months.map(o => {
+    const f = o.factor
+    return [
+      o.label,
+      Math.round(e.monthUsage * f),
+      ...e.sourceSplit.map(s => Math.round(e.monthUsage * f * s.value / 100)),
+      +(e.receivable * f).toFixed(1),
+      ...e.feeTotals.map(s => +(s.value * f).toFixed(1)),
+    ]
+  })
+  downloadExcel(`用电分析_${p.value.shortName}_${start}_${end}`, headers, rows)
+  emit('toast', `用电分析已导出 ${months.length} 个月数据`)
 }
 </script>
 

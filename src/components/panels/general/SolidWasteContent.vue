@@ -4,9 +4,12 @@
     <div class="space-y-1.5">
       <div class="flex justify-between items-center">
         <span class="text-sm text-slate-200 font-bold">固废 · 危废 · 废水量</span>
-        <div class="flex items-center text-xs rounded border border-cyan-500/30 overflow-hidden shrink-0">
-          <button type="button" @click="viewMode = 'year'" :class="['px-2.5 py-0.5 cursor-pointer transition', viewMode === 'year' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-cyan-300']">按年</button>
-          <button type="button" @click="viewMode = 'month'" :class="['px-2.5 py-0.5 cursor-pointer transition border-l border-cyan-500/30', viewMode === 'month' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-cyan-300']">按月</button>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <ExportRangeButton title="固废处置监控" granularity="date" :default-range="exportRange" @export="handleExport" />
+          <div class="flex items-center text-xs rounded border border-cyan-500/30 overflow-hidden shrink-0">
+            <button type="button" @click="viewMode = 'year'" :class="['px-2.5 py-0.5 cursor-pointer transition', viewMode === 'year' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-cyan-300']">按年</button>
+            <button type="button" @click="viewMode = 'month'" :class="['px-2.5 py-0.5 cursor-pointer transition border-l border-cyan-500/30', viewMode === 'month' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-cyan-300']">按月</button>
+          </div>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
@@ -48,9 +51,44 @@
 
     <!-- 收运中转记录（近7天，点击车辆查询过磅详情） -->
     <div :class="['bg-[#051330]/40 rounded border border-cyan-500/10', isLargeScreen ? 'p-2' : 'p-2.5']">
-      <div class="flex justify-between items-center mb-1.5">
-        <span class="text-sm text-cyan-300 font-bold">🚛 收运中转记录</span>
-        <span class="text-xs text-slate-500">近7天</span>
+      <div class="mb-1.5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-sm text-cyan-300 font-bold">🚛 收运中转记录</span>
+          <div class="flex items-center text-xs rounded border border-cyan-500/30 overflow-hidden shrink-0">
+            <button type="button" @click="timeMode = 'recent'" :class="['px-2.5 py-0.5 cursor-pointer transition', timeMode === 'recent' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-cyan-300']">近7天</button>
+            <button type="button" @click="timeMode = 'custom'" :class="['px-2.5 py-0.5 cursor-pointer transition border-l border-cyan-500/30', timeMode === 'custom' ? 'bg-cyan-500/25 text-cyan-300' : 'text-slate-400 hover:text-cyan-300']">时间</button>
+          </div>
+        </div>
+        <el-date-picker
+          v-if="timeMode === 'custom'"
+          v-model="recordRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD"
+          size="small"
+          :clearable="false"
+          class="record-range-picker"
+          popper-class="export-range-popper"
+        />
+      </div>
+
+      <!-- 总量统计（按当前记录净重合计） -->
+      <div class="grid grid-cols-3 gap-2 mb-1.5 text-center">
+        <div class="bg-cyan-500/5 border border-cyan-500/15 rounded px-1 py-1">
+          <span class="block text-[11px] text-slate-400">固废总量</span>
+          <span class="block font-mono text-sm text-cyan-300 tabular-nums">{{ wasteTotals.solid.toFixed(2) }} 吨</span>
+        </div>
+        <div class="bg-rose-500/5 border border-rose-500/15 rounded px-1 py-1">
+          <span class="block text-[11px] text-slate-400">危废总量</span>
+          <span class="block font-mono text-sm text-rose-300 tabular-nums">{{ wasteTotals.hazardous.toFixed(2) }} 吨</span>
+        </div>
+        <div class="bg-sky-500/5 border border-sky-500/15 rounded px-1 py-1">
+          <span class="block text-[11px] text-slate-400">废水总量</span>
+          <span class="block font-mono text-sm text-sky-300 tabular-nums">{{ wasteTotals.wastewater.toFixed(2) }} 吨</span>
+        </div>
       </div>
 
       <!-- 搜索框 -->
@@ -95,6 +133,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ChevronDown, Search } from 'lucide-vue-next'
+import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import { downloadExcel } from '../../../utils/exportExcel'
 
 withDefaults(defineProps<{
   isLargeScreen?: boolean
@@ -142,34 +182,128 @@ const wastes = computed(() => {
   return wasteYearData[selectedYear.value] || wasteYearData['2025']
 })
 
-// 收运中转记录：点击车辆查询过磅详情（流水号/车牌号/毛重/皮重/净重/皮重时间）
-const transferRecords = [
-  { serial: 'PF20261028001', plate: '浙G·D3852', category: '固废', time: '10-28 09:12', gross: '18.60', tare: '6.10', net: '12.50', tareTime: '10-28 08:55' },
-  { serial: 'PF20261028002', plate: '浙G·A1176', category: '危废', time: '10-28 10:40', gross: '11.20', tare: '6.40', net: '4.80', tareTime: '10-28 10:22' },
-  { serial: 'PF20261028003', plate: '浙G·E8821', category: '固废', time: '10-28 14:20', gross: '19.40', tare: '6.20', net: '13.20', tareTime: '10-28 14:02' },
-  { serial: 'PF20261028004', plate: '浙G·G4519', category: '废水', time: '10-28 16:55', gross: '28.50', tare: '6.00', net: '22.50', tareTime: '10-28 16:40' },
-  { serial: 'PF20261027001', plate: '浙G·B2093', category: '废水', time: '10-27 16:05', gross: '36.00', tare: '6.00', net: '30.00', tareTime: '10-27 15:48' },
-  { serial: 'PF20261027002', plate: '浙G·F7310', category: '固废', time: '10-27 08:30', gross: '15.30', tare: '6.10', net: '9.20', tareTime: '10-27 08:12' },
-  { serial: 'PF20261027003', plate: '浙G·H6037', category: '危废', time: '10-27 11:15', gross: '12.90', tare: '6.30', net: '6.60', tareTime: '10-27 10:58' },
-  { serial: 'PF20261027004', plate: '浙G·D3852', category: '固废', time: '10-27 18:30', gross: '16.80', tare: '6.10', net: '10.70', tareTime: '10-27 18:12' },
-  { serial: 'PF20261026001', plate: '浙G·C5568', category: '危废', time: '10-26 14:22', gross: '13.80', tare: '6.50', net: '7.30', tareTime: '10-26 14:05' },
-  { serial: 'PF20261026002', plate: '浙G·A1176', category: '废水', time: '10-26 09:40', gross: '32.60', tare: '6.00', net: '26.60', tareTime: '10-26 09:25' },
-  { serial: 'PF20261026003', plate: '浙G·F7310', category: '危废', time: '10-26 15:10', gross: '14.50', tare: '6.50', net: '8.00', tareTime: '10-26 14:52' },
-  { serial: 'PF20261025001', plate: '浙G·B2093', category: '固废', time: '10-25 08:50', gross: '17.20', tare: '6.10', net: '11.10', tareTime: '10-25 08:35' },
-  { serial: 'PF20261025002', plate: '浙G·C5568', category: '废水', time: '10-25 13:45', gross: '30.10', tare: '6.00', net: '24.10', tareTime: '10-25 13:30' },
-  { serial: 'PF20261024001', plate: '浙G·H6037', category: '固废', time: '10-24 10:05', gross: '16.40', tare: '6.20', net: '10.20', tareTime: '10-24 09:48' },
-  { serial: 'PF20261023001', plate: '浙G·E8821', category: '危废', time: '10-23 14:30', gross: '11.80', tare: '6.40', net: '5.40', tareTime: '10-23 14:12' },
-  { serial: 'PF20261022001', plate: '浙G·G4519', category: '固废', time: '10-22 09:15', gross: '18.90', tare: '6.10', net: '12.80', tareTime: '10-22 08:58' },
-]
+// ===== 导出（自由选择具体日期范围，导出收运中转记录明细） =====
+const exportRange: [string, string] = ['2026-10-22', '2026-10-28']
 
-// 按车牌号 / 流水号搜索
+// 从流水号提取收运日期（PF20261028001 -> 2026-10-28）
+function recordDate(r: { serial: string }): string {
+  const s = r.serial.slice(2, 10)
+  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`
+}
+
+function handleExport(start: string, end: string) {
+  const records = transferRecords.filter((r) => {
+    const d = recordDate(r)
+    return d >= start && d <= end
+  })
+  const sumNet = (cat: string) =>
+    records
+      .filter((r) => r.category === cat)
+      .reduce((s, r) => s + (parseFloat(r.net) || 0), 0)
+
+  const headers = ['收运日期', '流水号', '车牌号', '类别', '收运时间', '毛重（吨）', '皮重（吨）', '净重（吨）', '皮重时间']
+  const rows = records.map((r) => [
+    recordDate(r),
+    r.serial,
+    r.plate,
+    r.category,
+    r.time,
+    r.gross,
+    r.tare,
+    r.net,
+    r.tareTime,
+  ])
+  // 末尾追加总量统计行（净重合计）
+  rows.push(['', '', '', '固废总量', '', '', '', round2(sumNet('固废')), ''])
+  rows.push(['', '', '', '危废总量', '', '', '', round2(sumNet('危废')), ''])
+  rows.push(['', '', '', '废水总量', '', '', '', round2(sumNet('废水')), ''])
+  downloadExcel(`固废处置监控_${start}_${end}`, headers, rows)
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+// 收运中转记录：点击车辆查询过磅详情（流水号/车牌号/毛重/皮重/净重/皮重时间）
+// 生成近 3 个月演示数据（2026-08-01 ~ 2026-10-28，每天固废/危废/废水各 1 条）
+interface TransferRecord {
+  serial: string
+  plate: string
+  category: string
+  time: string
+  gross: string
+  tare: string
+  net: string
+  tareTime: string
+}
+
+const transferPlates = ['浙G·D3852', '浙G·A1176', '浙G·E8821', '浙G·G4519', '浙G·B2093', '浙G·F7310', '浙G·H6037', '浙G·C5568']
+
+const transferRecords: TransferRecord[] = (() => {
+  const pads = (n: number, len = 2) => String(n).padStart(len, '0')
+  const dayMs = 24 * 60 * 60 * 1000
+  const startDay = new Date(2026, 7, 1) // 2026-08-01
+  const endDay = new Date(2026, 9, 28) // 2026-10-28
+  const catDefs = [
+    { cat: '固废', hour: 9, netBase: 9, span: 5 },
+    { cat: '危废', hour: 11, netBase: 5, span: 4 },
+    { cat: '废水', hour: 15, netBase: 22, span: 9 },
+  ]
+  const list: TransferRecord[] = []
+  for (let t = startDay.getTime(); t <= endDay.getTime(); t += dayMs) {
+    const d = new Date(t)
+    const dayIdx = Math.round((t - startDay.getTime()) / dayMs)
+    const ymd = `${d.getFullYear()}${pads(d.getMonth() + 1)}${pads(d.getDate())}`
+    catDefs.forEach((c, ci) => {
+      const net = c.netBase + (dayIdx % c.span) + ((dayIdx + ci) % 10) * 0.1
+      const tare = 6.0 + (dayIdx % 5) * 0.1
+      const minute = 10 + ((dayIdx * 7 + ci * 13) % 45)
+      const dt = new Date(d)
+      dt.setHours(c.hour, minute, 0, 0)
+      const tareDt = new Date(dt.getTime() - 18 * 60 * 1000)
+      const fmtHM = (x: Date) => `${pads(x.getHours())}:${pads(x.getMinutes())}`
+      const fmtFull = (x: Date) => `${pads(x.getMonth() + 1)}-${pads(x.getDate())} ${fmtHM(x)}`
+      list.push({
+        serial: `PF${ymd}${pads(ci + 1, 3)}`,
+        plate: transferPlates[(dayIdx + ci) % transferPlates.length],
+        category: c.cat,
+        time: fmtFull(dt),
+        gross: (net + tare).toFixed(2),
+        tare: tare.toFixed(1),
+        net: net.toFixed(2),
+        tareTime: fmtFull(tareDt),
+      })
+    })
+  }
+  return list
+})()
+
+// 收运中转记录：时间筛选模式（默认近7天，可切换自定义时间段）+ 车牌号 / 流水号搜索
 const searchQuery = ref('')
+const timeMode = ref<'recent' | 'custom'>('recent')
+const recordRange = ref<[string, string]>(['2026-10-22', '2026-10-28'])
+
+// 近7天固定范围
+const RECENT_RANGE: [string, string] = ['2026-10-22', '2026-10-28']
+
 const filteredRecords = computed(() => {
+  const [start, end] = timeMode.value === 'recent' ? RECENT_RANGE : recordRange.value
+  const list = transferRecords.filter((r) => {
+    const d = recordDate(r)
+    return (!start || d >= start) && (!end || d <= end)
+  })
   const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return transferRecords
-  return transferRecords.filter(
-    (r) => r.plate.toLowerCase().includes(q) || r.serial.toLowerCase().includes(q)
-  )
+  if (!q) return list
+  return list.filter((r) => r.plate.toLowerCase().includes(q) || r.serial.toLowerCase().includes(q))
+})
+
+// 固废/危废/废水总量：按当前记录（含搜索过滤）的净重合计
+const wasteTotals = computed(() => {
+  const sum = (cat: string) =>
+    filteredRecords.value
+      .filter((r) => r.category === cat)
+      .reduce((s, r) => s + (parseFloat(r.net) || 0), 0)
+  return { solid: sum('固废'), hazardous: sum('危废'), wastewater: sum('废水') }
 })
 
 const expandedSerial = ref<string | null>(null)
@@ -204,6 +338,29 @@ function catClass(cat: string) {
   color: #22d3ee !important;
 }
 
+/* 收运中转记录日期范围输入框深色主题 */
+:deep(.record-range-picker) {
+  width: 100%;
+}
+:deep(.record-range-picker .el-input__wrapper) {
+  background-color: #0b2152 !important;
+  box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.35) inset !important;
+  border-radius: 4px;
+}
+:deep(.record-range-picker .el-range-input) {
+  color: #22d3ee !important;
+  font-family: monospace;
+  font-size: 12px;
+}
+:deep(.record-range-picker .el-range-separator) {
+  color: #64748b !important;
+  font-size: 12px;
+}
+:deep(.record-range-picker .el-range__icon),
+:deep(.record-range-picker .el-range__close-icon) {
+  color: #22d3ee !important;
+}
+
 /* 收运中转记录列表滚动条 */
 .transfer-list::-webkit-scrollbar {
   width: 6px;
@@ -222,4 +379,16 @@ function catClass(cat: string) {
 .transfer-list::-webkit-scrollbar-thumb:hover {
   background: rgba(6, 182, 212, 0.7);
 }
+</style>
+
+<style>
+/* daterange 下拉面板深色主题补充（teleport 到 body，复用 export-range-popper 容器背景） */
+.export-range-popper .el-date-table td .cell { color: #cbd5e1; }
+.export-range-popper .el-date-table td .cell:hover { color: #00f2ff; }
+.export-range-popper .el-date-table td.today .cell { color: #00f2ff; }
+.export-range-popper .el-date-table td.in-range .cell { background-color: rgba(0, 242, 255, 0.18); color: #00f2ff; }
+.export-range-popper .el-date-table td.start-date .cell,
+.export-range-popper .el-date-table td.end-date .cell { background-color: #00f2ff; color: #04101f; font-weight: 700; }
+.export-range-popper .el-date-table td.disabled .cell { color: #334155; }
+.export-range-popper .el-date-table th { color: #64748b; }
 </style>

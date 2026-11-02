@@ -11,6 +11,7 @@
         <el-select v-model="selectedPeriod" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
           <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
         </el-select>
+        <ExportRangeButton title="供气分析" :default-range="exportRange" @export="handleExport" />
       </div>
     </div>
 
@@ -65,6 +66,14 @@
           <span class="ml-auto font-mono text-indigo-300 font-black">{{ nightUsage }} <span class="text-slate-300">万m³</span></span>
         </div>
         <div :class="['flex items-center gap-1.5', isLargeScreen ? 'text-xs' : 'text-sm']">
+          <span class="text-slate-300 whitespace-nowrap">日间用气费</span>
+          <span class="ml-auto font-mono text-cyan-300 font-black">{{ dayFee }} <span class="text-slate-300">万元</span></span>
+        </div>
+        <div :class="['flex items-center gap-1.5', isLargeScreen ? 'text-xs' : 'text-sm']">
+          <span class="text-slate-300 whitespace-nowrap">夜间用气费</span>
+          <span class="ml-auto font-mono text-indigo-300 font-black">{{ nightFee }} <span class="text-slate-300">万元</span></span>
+        </div>
+        <div :class="['flex items-center gap-1.5', isLargeScreen ? 'text-xs' : 'text-sm']">
           <span class="text-slate-300 whitespace-nowrap">日单价</span>
           <span class="ml-auto font-mono text-amber-300 font-black">{{ p.gas.dayPrice }} <span class="text-slate-300">元/m³</span></span>
         </div>
@@ -81,6 +90,8 @@
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import TechPieChart from '../../charts/TechPieChart.vue'
+import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import { downloadExcel } from '../../../utils/exportExcel'
 import { parkProfiles, monthOptions, yearOptions, type ParkKey } from '../../../data/parkMonitor'
 
 withDefaults(defineProps<{
@@ -89,7 +100,7 @@ withDefaults(defineProps<{
   isLargeScreen: true
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'toast', msg: string): void
 }>()
 
@@ -129,10 +140,40 @@ const nightUsage = computed(() => {
   return Math.round(v * 10) / 10
 })
 
+// 日间/夜间用气费（万元）= 用气量（万m³）× 单价（元/m³）
+const dayFee = computed(() => +(dayUsage.value * p.value.gas.dayPrice).toFixed(2))
+const nightFee = computed(() => +(nightUsage.value * p.value.gas.nightPrice).toFixed(2))
+
 const splitData = computed(() => [
   { name: '日间', value: dayUsage.value, color: '#0ea5e9' },
   { name: '夜间', value: nightUsage.value, color: '#6366f1' }
 ])
+
+// ===== 导出（自由选择日期范围） =====
+const exportRange: [string, string] = [monthOptions[0].key, monthOptions[monthOptions.length - 1].key]
+
+function handleExport(start: string, end: string) {
+  const g = p.value.gas
+  const months = monthOptions.filter(o => o.key >= start && o.key <= end)
+  if (!months.length) {
+    emit('toast', '所选日期范围内暂无供气数据')
+    return
+  }
+  const rows = months.map(o => {
+    const total = Math.round(g.monthUsage * o.factor)
+    const day = Math.round(total * g.dayRatio / 100 * 10) / 10
+    const night = Math.round(total * (100 - g.dayRatio) / 100 * 10) / 10
+    return [
+      o.label,
+      day,
+      night,
+      +(day * g.dayPrice).toFixed(2),
+      +(night * g.nightPrice).toFixed(2),
+    ]
+  })
+  downloadExcel(`供气分析_${p.value.shortName}_${start}_${end}`, ['月份', '日间用气量（万m³）', '夜间用气量（万m³）', '日间用气费（万元）', '夜间用气费（万元）'], rows)
+  emit('toast', `供气分析已导出 ${months.length} 个月数据`)
+}
 </script>
 
 <style scoped>

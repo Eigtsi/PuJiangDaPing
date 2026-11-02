@@ -50,26 +50,26 @@
 
     <!-- 楼栋悬浮面板（仅点 X 关闭；检索/详情均在此面板内，不另弹窗） -->
     <Transition name="pop">
-      <div v-if="hoveredBuilding" class="absolute left-[450px] top-16 z-40 pointer-events-auto">
-        <div class="bg-[#09224f]/60 border border-cyan-400 rounded-lg shadow-[0_8px_32px_rgba(6,182,212,0.4)] backdrop-blur-md w-[320px] max-h-[78vh] flex flex-col overflow-hidden">
+      <div v-if="hoveredBuilding" class="absolute inset-x-0 top-16 z-40 flex justify-center pointer-events-none">
+        <div class="pointer-events-auto bg-[#09224f]/60 border border-cyan-400 rounded-lg shadow-[0_8px_32px_rgba(6,182,212,0.4)] backdrop-blur-md w-[460px] max-h-[78vh] flex flex-col overflow-hidden">
           <!-- 标题栏 + 关闭 -->
           <div class="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-cyan-500/20 shrink-0">
             <div class="flex items-baseline gap-2 min-w-0">
-              <span class="text-sm font-bold text-cyan-300 whitespace-nowrap">{{ hoveredBuilding.mapName }}</span>
-              <span class="text-xs text-slate-400 whitespace-nowrap">{{ hoveredBuilding.type }}</span>
+              <span class="text-base font-bold text-cyan-300 whitespace-nowrap">{{ hoveredBuilding.mapName }}</span>
+              <span class="text-sm text-slate-400 whitespace-nowrap">{{ hoveredBuilding.type }}</span>
             </div>
-            <button @click="closeHoverPanel" class="text-slate-400 hover:text-cyan-300 transition p-0.5 shrink-0 cursor-pointer"><X class="w-4 h-4" /></button>
+            <button @click="closeHoverPanel" class="text-slate-400 hover:text-cyan-300 transition p-0.5 shrink-0 cursor-pointer"><X class="w-5 h-5" /></button>
           </div>
 
           <!-- 检索输入（始终在面板内） -->
           <div class="px-3 pt-2.5 shrink-0">
-            <div class="flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-[#051330]/80 border border-cyan-400/30 focus-within:border-cyan-400">
-              <Search class="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <div class="flex items-center gap-1.5 h-9 px-2.5 rounded-md bg-[#051330]/80 border border-cyan-400/30 focus-within:border-cyan-400">
+              <Search class="w-4 h-4 text-slate-500 shrink-0" />
               <input
                 v-model="searchQuery"
                 type="text"
                 placeholder="检索园区企业…"
-                class="flex-1 min-w-0 bg-transparent text-cyan-200 text-xs placeholder:text-slate-500 outline-none"
+                class="flex-1 min-w-0 bg-transparent text-cyan-200 text-sm placeholder:text-slate-500 outline-none"
               />
             </div>
           </div>
@@ -78,14 +78,14 @@
           <div class="px-3 py-2.5 flex-1 min-h-0 overflow-y-auto no-scrollbar">
             <!-- 企业详情 -->
             <template v-if="panelEnterprise">
-              <button @click="backToList" class="flex items-center gap-1 text-xs text-cyan-300 hover:text-cyan-200 transition mb-2 cursor-pointer">
-                <ChevronLeft class="w-3.5 h-3.5" /> 返回列表
+              <button @click="backToList" class="flex items-center gap-1 text-sm text-cyan-300 hover:text-cyan-200 transition mb-2 cursor-pointer">
+                <ChevronLeft class="w-4 h-4" /> 返回列表
               </button>
 
-              <div class="px-2.5 py-2 mb-2 rounded bg-[#0a1e4a]/60 border border-cyan-500/20">
-                <div class="text-sm font-bold text-cyan-300 leading-snug break-all">{{ panelEnterprise.name }}</div>
-                <div v-if="panelEnterprise.industry" class="text-[11px] text-slate-400 mt-0.5">{{ panelEnterprise.industry }}</div>
-                <div class="mt-1.5 pt-1.5 border-t border-cyan-500/15 space-y-1 text-xs">
+              <div class="px-3 py-2.5 mb-2 rounded bg-[#0a1e4a]/60 border border-cyan-500/20">
+                <div class="text-base font-bold text-cyan-300 leading-snug break-all">{{ panelEnterprise.name }}</div>
+                <div v-if="panelEnterprise.industry" class="text-xs text-slate-400 mt-0.5">{{ panelEnterprise.industry }}</div>
+                <div class="mt-1.5 pt-1.5 border-t border-cyan-500/15 space-y-1 text-sm">
                   <div class="flex justify-between"><span class="text-slate-400">联系人</span><span class="text-slate-200">{{ panelEnterprise.contact }}</span></div>
                   <div class="flex justify-between"><span class="text-slate-400">联系电话</span><span class="text-cyan-300 font-mono">{{ panelEnterprise.phone }}</span></div>
                 </div>
@@ -93,34 +93,53 @@
 
               <div class="grid grid-cols-2 gap-1.5 mb-2.5">
                 <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
-                  <span class="block text-[11px] text-slate-400">房间数</span>
-                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-base tabular-nums">{{ panelEnterprise.rooms.length }}</span>
+                  <span class="block text-xs text-slate-400">房间数</span>
+                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-lg tabular-nums">{{ panelEnterprise.rooms.length }}</span>
                 </div>
                 <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
-                  <span class="block text-[11px] text-slate-400">总面积 (㎡)</span>
-                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-base tabular-nums">{{ fmt(panelEnterprise.totalArea) }}</span>
+                  <span class="block text-xs text-slate-400">总面积 (㎡)</span>
+                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-lg tabular-nums">{{ fmt(panelEnterprise.totalArea) }}</span>
                 </div>
                 <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
-                  <span class="block text-[11px] text-slate-400">年总租金 (元)</span>
-                  <span class="block mt-0.5 font-mono font-black text-amber-300 text-base tabular-nums">{{ fmt(panelEnterprise.annualRent) }}</span>
+                  <span class="block text-xs text-slate-400">年总租金 (元)</span>
+                  <span class="block mt-0.5 font-mono font-black text-amber-300 text-lg tabular-nums">{{ fmt(panelEnterprise.annualRent) }}</span>
                 </div>
                 <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
-                  <span class="block text-[11px] text-slate-400">年物业费 (元)</span>
-                  <span class="block mt-0.5 font-mono font-black text-emerald-400 text-base tabular-nums">{{ fmt(panelEnterprise.annualProperty) }}</span>
+                  <span class="block text-xs text-slate-400">年物业费 (元)</span>
+                  <span class="block mt-0.5 font-mono font-black text-emerald-400 text-lg tabular-nums">{{ fmt(panelEnterprise.annualProperty) }}</span>
                 </div>
               </div>
 
-              <div class="text-[11px] text-slate-400 mb-1.5">房间明细（{{ panelEnterprise.rooms.length }} 间）</div>
+              <!-- 水电气明细（默认企业合计；点击下方房间后展示该房间） -->
+              <UtilityEnergyPanel
+                v-if="activeEnergy"
+                :energy="activeEnergy"
+                :period="energyPeriod"
+                :granularity="energyGranularity"
+                :entity-name="activeEntityName"
+                :rooms="activeRooms"
+                v-model:period="energyPeriod"
+                v-model:granularity="energyGranularity"
+                class="mb-2.5"
+              />
+
+              <div class="text-xs text-slate-400 mb-1.5">房间明细（{{ panelEnterprise.rooms.length }} 间）<span class="text-slate-500">· 点击厂房查看该房间水电气</span></div>
               <div class="space-y-1.5">
-                <div v-for="(room, i) in panelEnterprise.rooms" :key="i" class="bg-[#051330]/50 rounded px-2.5 py-1.5 border border-cyan-500/10">
-                  <div class="flex items-center justify-between text-xs">
+                <button
+                  v-for="(room, i) in panelEnterprise.rooms"
+                  :key="i"
+                  type="button"
+                  @click="toggleRoom(room)"
+                  :class="['w-full text-left rounded px-2.5 py-1.5 border transition cursor-pointer', isRoomSelected(room) ? 'bg-cyan-500/15 border-cyan-400/40' : 'bg-[#051330]/50 border-cyan-500/10 hover:bg-cyan-500/10']"
+                >
+                  <div class="flex items-center justify-between text-sm">
                     <div class="flex items-center gap-1.5 min-w-0">
-                      <span v-if="room.zone" class="text-[10px] px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-300 whitespace-nowrap shrink-0">{{ shortZone(room.zone) }}</span>
+                      <span v-if="room.zone" class="text-xs px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-300 whitespace-nowrap shrink-0">{{ shortZone(room.zone) }}</span>
                       <span class="text-slate-200 font-medium truncate">{{ roomLabel(room) }}</span>
                     </div>
-                    <span class="text-[10px] text-cyan-300/80 whitespace-nowrap shrink-0">{{ room.resourceType }}</span>
+                    <span class="text-xs text-cyan-300/80 whitespace-nowrap shrink-0">{{ room.resourceType }}</span>
                   </div>
-                  <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-slate-400">
+                  <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-400">
                     <span>面积 <span class="text-slate-200 font-mono">{{ room.totalArea != null ? fmt(room.totalArea) + '㎡' : '—' }}</span></span>
                     <span v-if="room.baseRent != null">基础租金 <span class="text-slate-200 font-mono">{{ fmt(room.baseRent) }}</span></span>
                     <span v-if="room.floorCoeff != null">楼层系数 <span class="text-slate-200 font-mono">{{ room.floorCoeff }}</span></span>
@@ -128,52 +147,65 @@
                     <span v-if="room.annualRent != null">年租金 <span class="text-amber-300/90 font-mono">{{ fmt(room.annualRent) }}</span></span>
                     <span v-if="room.annualProperty != null">年物业费 <span class="text-emerald-400/90 font-mono">{{ fmt(room.annualProperty) }}</span></span>
                   </div>
-                </div>
+                </button>
               </div>
             </template>
 
             <!-- 检索结果（输入关键字时） -->
             <template v-else-if="searchQuery.trim()">
-              <div class="text-xs text-slate-400 mb-1">检索结果（{{ searchResults.length }}）</div>
+              <div class="text-sm text-slate-400 mb-1">检索结果（{{ searchResults.length }}）</div>
               <div v-if="searchResults.length" class="space-y-1">
                 <button
                   v-for="r in searchResults"
                   :key="r.name"
                   @click="openEnterprise(r.name)"
-                  class="w-full text-left text-xs text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
+                  class="w-full text-left text-sm text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
                 >
                   <span class="truncate">{{ r.name }}</span>
-                  <span class="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">{{ r.rooms.length }} 间</span>
+                  <span class="text-xs text-slate-400 font-mono whitespace-nowrap shrink-0">{{ r.rooms.length }} 间</span>
                 </button>
               </div>
-              <div v-else class="text-xs text-slate-500 text-center py-6">无匹配企业</div>
+              <div v-else class="text-sm text-slate-500 text-center py-6">无匹配企业</div>
             </template>
 
             <!-- 默认：本楼统计 + 入住企业 -->
             <template v-else>
               <div class="grid grid-cols-2 gap-1.5 mb-2">
                 <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
-                  <span class="block text-xs text-slate-400">在租数量</span>
-                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-lg tabular-nums">{{ hoveredBuilding.rented }}</span>
+                  <span class="block text-sm text-slate-400">在租数量</span>
+                  <span class="block mt-0.5 font-mono font-black text-cyan-300 text-xl tabular-nums">{{ hoveredBuilding.rented }}</span>
                 </div>
                 <div class="bg-[#051330]/60 rounded px-2 py-1.5 text-center">
-                  <span class="block text-xs text-slate-400">空闲数量</span>
-                  <span class="block mt-0.5 font-mono font-black text-emerald-400 text-lg tabular-nums">{{ hoveredBuilding.vacant }}</span>
+                  <span class="block text-sm text-slate-400">空闲数量</span>
+                  <span class="block mt-0.5 font-mono font-black text-emerald-400 text-xl tabular-nums">{{ hoveredBuilding.vacant }}</span>
                 </div>
               </div>
-              <div class="text-xs text-slate-400 mb-1">入住企业（{{ hoveredBuilding.enterprises.length }}）<span class="text-slate-500">· 点击查看详情</span></div>
+              <!-- 水电气明细（默认上月，可切换月/年筛选、导出） -->
+              <UtilityEnergyPanel
+                v-if="buildingEnergy"
+                :energy="buildingEnergy"
+                :period="energyPeriod"
+                :granularity="energyGranularity"
+                :entity-name="hoveredBuilding.mapName"
+                :rooms="buildingRooms"
+                v-model:period="energyPeriod"
+                v-model:granularity="energyGranularity"
+                class="mb-2"
+              />
+
+              <div class="text-sm text-slate-400 mb-1">入住企业（{{ hoveredBuilding.enterprises.length }}）<span class="text-slate-500">· 点击查看详情</span></div>
               <div v-if="hoveredBuilding.enterprises.length" class="space-y-1">
                 <button
                   v-for="e in hoveredBuilding.enterprises"
                   :key="e"
                   @click="openEnterprise(e)"
-                  class="w-full text-left text-xs text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
+                  class="w-full text-left text-sm text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
                 >
                   <span class="truncate">{{ e }}</span>
-                  <ChevronRight class="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <ChevronRight class="w-4 h-4 text-slate-500 shrink-0" />
                 </button>
               </div>
-              <div v-else class="text-xs text-slate-500 text-center py-2">暂无入住企业</div>
+              <div v-else class="text-sm text-slate-500 text-center py-2">暂无入住企业</div>
             </template>
           </div>
         </div>
@@ -309,12 +341,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useStore } from 'vuex'
 import { MapPin, X, BarChart3, ChevronDown, ChevronUp, Search, ChevronRight, ChevronLeft, Download } from 'lucide-vue-next'
 import TechLineChart from '../charts/TechLineChart.vue'
+import UtilityEnergyPanel from './UtilityEnergyPanel.vue'
 import { mapMarkers, markerToLngLat, statusColors } from '../../data/mapData'
 import { monitoringPoints } from '../../data/monitoringPoints'
 import { parks } from '../../data/parkKml'
 import { propertyRooms, type PropertyRoom } from '../../data/propertyResources'
+import { getBuildingEnergy, getEnterpriseEnergy, getRoomEnergy, latestEnergyMonth } from '../../data/buildingEnergy'
 import { getEnterpriseContact } from '../../data/enterpriseContacts'
 import type { MapMarker as MapMarkerData, MarkerType } from '../../data/mapData'
 
@@ -519,6 +554,58 @@ function backToList() {
   panelEnterprise.value = null
 }
 
+// ===== 水电气明细：默认整栋楼（上月）；点击企业后展示该企业；点具体房间后展示该房间；仅厂房；可切月/年 =====
+const energyGranularity = ref<'month' | 'year'>('month')
+const energyPeriod = ref(latestEnergyMonth)
+const selectedRoom = ref<PropertyRoom | null>(null)
+
+const buildingEnergy = computed(() => {
+  const b = hoveredBuilding.value
+  if (!b?.buildingNo || !b.type.includes('厂房')) return null
+  return getBuildingEnergy(propertyZoneFor(props.activeZone), b.buildingNo, energyPeriod.value)
+})
+
+const enterpriseEnergy = computed(() => {
+  const e = panelEnterprise.value
+  if (!e || !e.rooms.some(r => r.resourceType === '厂房')) return null
+  return getEnterpriseEnergy(e.name, energyPeriod.value)
+})
+
+const roomEnergy = computed(() => {
+  const r = selectedRoom.value
+  if (!r || r.resourceType !== '厂房') return null
+  return getRoomEnergy(r, energyPeriod.value)
+})
+
+// 企业视图：未选中房间显示企业合计；选中厂房房间显示该房间明细（非厂房回退到企业合计）
+const activeEnergy = computed(() => roomEnergy.value ?? enterpriseEnergy.value)
+const activeEntityName = computed(() =>
+  (selectedRoom.value && roomEnergy.value) ? roomFullLabel(selectedRoom.value) : (panelEnterprise.value?.name ?? ''),
+)
+
+// ===== 导出用：按「每一个厂房房间」明细 =====
+const buildingRooms = computed<PropertyRoom[]>(() => {
+  const b = hoveredBuilding.value
+  if (!b?.buildingNo) return []
+  return propertyRooms.filter(
+    r => r.zone === propertyZoneFor(props.activeZone) && r.buildingNo === b.buildingNo && r.resourceType === '厂房',
+  )
+})
+
+const enterpriseRooms = computed<PropertyRoom[]>(() => {
+  const e = panelEnterprise.value
+  if (!e) return []
+  return e.rooms.filter(r => r.resourceType === '厂房')
+})
+
+// 企业视图导出：选中房间只导该房间，未选中导出该企业全部厂房
+const activeRooms = computed<PropertyRoom[]>(() =>
+  selectedRoom.value ? [selectedRoom.value] : enterpriseRooms.value,
+)
+
+// 切换企业 / 关闭面板时，重置选中的房间
+watch(panelEnterprise, () => { selectedRoom.value = null })
+
 function closeHoverPanel() {
   hoveredBuilding.value = null
   searchQuery.value = ''
@@ -534,6 +621,12 @@ function closeFloatingPanels() {
 
 defineExpose({ closeFloatingPanels })
 
+// 全局请求关闭地图悬浮面板（如导出弹框打开时），关闭楼栋/标记/详情面板
+const store = useStore()
+watch(() => store.state.closeMapFloating, () => {
+  closeFloatingPanels()
+})
+
 // 数字显示：整数不带小数，小数保留至多 2 位
 function fmt(n: number): string {
   if (!Number.isFinite(n)) return String(n)
@@ -542,6 +635,19 @@ function fmt(n: number): string {
 
 function roomLabel(r: PropertyRoom): string {
   return [r.buildingNo, r.floor, r.roomNo].filter(Boolean).join(' · ') || '—'
+}
+
+// 完整房间名（含园区），用于水电气明细标题，如「中部 41号楼 2层」
+function roomFullLabel(r: PropertyRoom): string {
+  return [shortZone(r.zone), r.buildingNo, r.floor, r.roomNo].filter(Boolean).join(' ') || '—'
+}
+
+function toggleRoom(room: PropertyRoom) {
+  selectedRoom.value = selectedRoom.value === room ? null : room
+}
+
+function isRoomSelected(room: PropertyRoom): boolean {
+  return selectedRoom.value === room
 }
 
 // 园区短名：东部园区 -> 东部

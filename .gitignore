@@ -6,3 +6,5 @@ coverage/
 *.log
 .env*
 !.env.example
+# 真实 Excel 源文件含 PII，禁止入库
+*.xlsx

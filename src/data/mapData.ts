@@ -83,10 +83,10 @@ export const mapMarkers: MapMarker[] = [
   { id: 'mk-c-14', type: 'enterprise', name: '金华诚信水晶清洗', x: 60, y: 45, zone: 'center', status: 'normal', enterpriseId: 'ent-026', buildingId: 'bld-g' },
 
   // 中部监测点（仅 1 个排污口 + 2 个厂界废气监测站）
-  // 按楼栋定位：排污口在 22#/8# 中间空地；废气监测站1在综合楼A、2在G号楼
+  // 按楼栋定位：排污口在 22#/8# 中间空地；废气监测站1在综合楼A旁、2在G号楼旁（避开楼栋图标，防止遮挡楼栋悬浮面板）
   { id: 'mk-d-03', type: 'discharge_outlet', name: '中部排污口', x: 16.8, y: 64.82, zone: 'center', status: 'normal', monitoringPointId: 'do-003' },
-  { id: 'mk-a-01', type: 'air_station', name: '厂界废气监测站1', x: 72.45, y: 54.83, zone: 'center', status: 'normal', monitoringPointId: 'as-001' },
-  { id: 'mk-a-02', type: 'air_station', name: '厂界废气监测站2', x: 9.73, y: 89.26, zone: 'center', status: 'normal', monitoringPointId: 'as-002' },
+  { id: 'mk-a-01', type: 'air_station', name: '厂界废气监测站1', x: 77, y: 60, zone: 'center', status: 'normal', monitoringPointId: 'as-001' },
+  { id: 'mk-a-02', type: 'air_station', name: '厂界废气监测站2', x: 15, y: 93, zone: 'center', status: 'normal', monitoringPointId: 'as-002' },
 
   // ===== 东部区块 (x: 65-90) =====
   // 企业标记 - 东部

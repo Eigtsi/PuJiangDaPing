@@ -11,6 +11,7 @@
         <el-select v-model="selectedPeriod" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
           <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
         </el-select>
+        <ExportRangeButton title="用水分析" :default-range="exportRange" @export="handleExport" />
       </div>
     </div>
 
@@ -100,6 +101,8 @@
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import TechPieChart from '../../charts/TechPieChart.vue'
+import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import { downloadExcel } from '../../../utils/exportExcel'
 import { parkProfiles, monthOptions, yearOptions, type ParkKey } from '../../../data/parkMonitor'
 
 withDefaults(defineProps<{
@@ -108,7 +111,7 @@ withDefaults(defineProps<{
   isLargeScreen: true
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'toast', msg: string): void
 }>()
 
@@ -162,6 +165,33 @@ const volumeTotal = computed(() => volumeSplit.value.reduce((sum, v) => sum + v.
 
 function fmtNum(n: number): string {
   return String(n)
+}
+
+// ===== 导出（自由选择日期范围） =====
+const exportRange: [string, string] = [monthOptions[0].key, monthOptions[monthOptions.length - 1].key]
+
+function handleExport(start: string, end: string) {
+  const w = p.value.waterUsage
+  const months = monthOptions.filter(o => o.key >= start && o.key <= end)
+  if (!months.length) {
+    emit('toast', '所选日期范围内暂无用水数据')
+    return
+  }
+  const volNames = w.volumeSplit.map(v => `${v.name}（吨）`)
+  const feeNames = w.sourceSplit.map(s => `${s.name}（万元）`)
+  const headers = ['月份', '用水量（吨）', ...volNames, '应收金额（万元）', ...feeNames]
+  const rows = months.map(o => {
+    const f = o.factor
+    return [
+      o.label,
+      Math.round(w.monthUsage * f),
+      ...w.volumeSplit.map(v => Math.round(v.value * f)),
+      +(w.receivable * f).toFixed(1),
+      ...w.sourceSplit.map(s => +(w.receivable * f * s.value / 100).toFixed(2)),
+    ]
+  })
+  downloadExcel(`用水分析_${p.value.shortName}_${start}_${end}`, headers, rows)
+  emit('toast', `用水分析已导出 ${months.length} 个月数据`)
 }
 </script>
 

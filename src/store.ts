@@ -18,6 +18,9 @@ export interface RootState {
   selectedEnterpriseId: string | null;
   selectedBuildingId: string | null;
   showEnterprisePanel: boolean;
+
+  // 新增：请求关闭地图上的悬浮面板（楼栋/标记/详情）——计数器，变化即触发
+  closeMapFloating: number;
 }
 
 export default createStore<RootState>({
@@ -35,6 +38,7 @@ export default createStore<RootState>({
       selectedEnterpriseId: null,
       selectedBuildingId: null,
       showEnterprisePanel: false,
+      closeMapFloating: 0,
     };
   },
   mutations: {
@@ -78,6 +82,9 @@ export default createStore<RootState>({
       if (!show) {
         state.selectedEnterpriseId = null;
       }
+    },
+    requestCloseMapFloating(state) {
+      state.closeMapFloating += 1;
     },
   },
   actions: {

@@ -144,7 +144,7 @@
       v-if="expandedIndex !== null"
       class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
     >
-      <div class="pointer-events-auto tech-panel w-[475px] max-w-[90vw] max-h-[84vh] flex flex-col overflow-hidden border border-cyan-400 shadow-[0_8px_40px_rgba(6,182,212,0.5)]">
+      <div class="pointer-events-auto tech-panel w-[475px] max-w-[90vw] flex flex-col border border-cyan-400 shadow-[0_8px_40px_rgba(6,182,212,0.5)]">
         <span class="hud-corner hud-corner-tr" />
         <span class="hud-corner hud-corner-bl" />
         <div class="flex items-center justify-between px-5 py-3 border-b border-cyan-500/25 shrink-0">
@@ -156,7 +156,7 @@
             <X class="w-5 h-5" />
           </button>
         </div>
-        <div class="flex-1 min-h-0 overflow-y-auto no-scrollbar p-5">
+        <div class="p-5">
           <component :is="panelComponents[expandedIndex]" :isLargeScreen="false" @toast="toastMessage" />
         </div>
       </div>

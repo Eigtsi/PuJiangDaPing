@@ -11,6 +11,7 @@
         <el-select v-model="selectedPeriod" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
           <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
         </el-select>
+        <ExportRangeButton title="光伏发电" :default-range="exportRange" @export="handleExport" />
       </div>
     </div>
 
@@ -69,6 +70,8 @@
 import { ref, computed } from 'vue'
 import TechLineChart from '../../charts/TechLineChart.vue'
 import TechBarChart from '../../charts/TechBarChart.vue'
+import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import { downloadExcel } from '../../../utils/exportExcel'
 import { energyMonthly, solarOverview, energyYearOptions } from '../../../data/energy'
 
 withDefaults(defineProps<{
@@ -77,7 +80,7 @@ withDefaults(defineProps<{
   isLargeScreen: true
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'toast', msg: string): void
 }>()
 
@@ -149,6 +152,29 @@ const annualOutput = computed(() => annualSolar.value)
 
 function fmtNum(n: number): string {
   return String(n)
+}
+
+// ===== 导出（自由选择日期范围） =====
+const exportRange: [string, string] = [energyMonthly[0].month, energyMonthly[energyMonthly.length - 1].month]
+
+function handleExport(start: string, end: string) {
+  const months = energyMonthly.filter(m => m.month >= start && m.month <= end)
+  if (!months.length) {
+    emit('toast', '所选日期范围内暂无光伏数据')
+    return
+  }
+  const rows = months.map(m => {
+    const solar = m.electricity.solar
+    const [year, month] = m.month.split('-')
+    return [
+      `${year}年${parseInt(month, 10)}月`,
+      solar,
+      Math.round(solar * solarOverview.selfUseRate / 100),
+      +(solar * solarOverview.co2Factor / 1000).toFixed(1),
+    ]
+  })
+  downloadExcel(`光伏发电_${start}_${end}`, ['月份', '光伏发电量（kWh）', '光伏用电电量（kWh）', 'CO₂减排量（吨）'], rows)
+  emit('toast', `光伏发电已导出 ${months.length} 个月数据`)
 }
 </script>
 
