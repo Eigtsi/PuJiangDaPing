@@ -12,6 +12,7 @@
           <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
         </el-select>
         <ExportRangeButton title="用电分析" :default-range="exportRange" @export="handleExport" />
+        <ArrearsBell fee-type="电费" />
       </div>
     </div>
 
@@ -102,6 +103,7 @@ import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import TechPieChart from '../../charts/TechPieChart.vue'
 import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import ArrearsBell from '../../shared/ArrearsBell.vue'
 import { downloadExcel } from '../../../utils/exportExcel'
 import { parkProfiles, monthOptions, yearOptions, type ParkKey } from '../../../data/parkMonitor'
 

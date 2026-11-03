@@ -51,15 +51,26 @@
     <!-- 楼栋悬浮面板（仅点 X 关闭；检索/详情均在此面板内，不另弹窗） -->
     <Transition name="pop">
       <div v-if="hoveredBuilding" class="absolute inset-x-0 top-16 z-40 flex justify-center pointer-events-none">
-        <div class="pointer-events-auto bg-[#09224f]/60 border border-cyan-400 rounded-lg shadow-[0_8px_32px_rgba(6,182,212,0.4)] backdrop-blur-md w-[460px] max-h-[78vh] flex flex-col overflow-hidden">
-          <!-- 标题栏 + 关闭 -->
-          <div class="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-cyan-500/20 shrink-0">
-            <div class="flex items-baseline gap-2 min-w-0">
-              <span class="text-base font-bold text-cyan-300 whitespace-nowrap">{{ hoveredBuilding.mapName }}</span>
-              <span class="text-sm text-slate-400 whitespace-nowrap">{{ hoveredBuilding.type }}</span>
-            </div>
-            <button @click="closeHoverPanel" class="text-slate-400 hover:text-cyan-300 transition p-0.5 shrink-0 cursor-pointer"><X class="w-5 h-5" /></button>
-          </div>
+        <div class="pointer-events-auto" :style="{ transform: `translate(${buildingDrag.x}px, ${buildingDrag.y}px)` }">
+          <div :style="{ zoom: buildingMaximized ? 1.6 : 1 }">
+            <div
+              class="pointer-events-auto bg-[#09224f]/60 border border-cyan-400 rounded-lg shadow-[0_8px_32px_rgba(6,182,212,0.4)] backdrop-blur-md w-[460px] flex flex-col overflow-hidden"
+              :style="{ maxHeight: buildingMaximized ? 'calc(100vh / 1.6)' : '100vh' }"
+            >
+              <!-- 标题栏 + 放大/还原 + 关闭（标题栏可拖拽移动面板） -->
+              <div class="flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b border-cyan-500/20 shrink-0 cursor-move select-none" @mousedown="startBuildingDrag">
+                <div class="flex items-baseline gap-2 min-w-0">
+                  <span class="text-base font-bold text-cyan-300 whitespace-nowrap">{{ hoveredBuilding.mapName }}</span>
+                  <span class="text-sm text-slate-400 whitespace-nowrap">{{ hoveredBuilding.type }}</span>
+                </div>
+                <div class="flex items-center gap-0.5 shrink-0" @mousedown.stop>
+                  <button @click="buildingMaximized = !buildingMaximized" :title="buildingMaximized ? '还原' : '放大'" class="text-slate-400 hover:text-cyan-300 transition p-0.5 shrink-0 cursor-pointer">
+                    <Minimize2 v-if="buildingMaximized" class="w-4 h-4" />
+                    <Maximize2 v-else class="w-4 h-4" />
+                  </button>
+                  <button @click="closeHoverPanel" class="text-slate-400 hover:text-cyan-300 transition p-0.5 shrink-0 cursor-pointer"><X class="w-5 h-5" /></button>
+                </div>
+              </div>
 
           <!-- 检索输入（始终在面板内） -->
           <div class="px-3 pt-2.5 shrink-0">
@@ -117,21 +128,34 @@
                 :period="energyPeriod"
                 :granularity="energyGranularity"
                 :entity-name="activeEntityName"
-                :rooms="activeRooms"
+                :rooms="exportRooms"
+                require-rooms
+                @toast="(msg) => store.commit('setToast', msg)"
                 v-model:period="energyPeriod"
                 v-model:granularity="energyGranularity"
                 class="mb-2.5"
               />
 
-              <div class="text-xs text-slate-400 mb-1.5">房间明细（{{ panelEnterprise.rooms.length }} 间）<span class="text-slate-500">· 点击厂房查看该房间水电气</span></div>
+              <div class="text-xs text-slate-400 mb-1.5 flex items-center justify-between gap-1">
+                <span>房间明细（{{ panelEnterprise.rooms.length }} 间）<span class="text-slate-500">· 勾选后导出、点击查看该房间</span></span>
+                <button type="button" @click="toggleSelectAllRooms" class="text-xs text-cyan-300 hover:text-cyan-200 transition cursor-pointer shrink-0">{{ allRoomsSelected ? '清空' : '全选' }}</button>
+              </div>
               <div class="space-y-1.5">
-                <button
+                <div
                   v-for="(room, i) in panelEnterprise.rooms"
                   :key="i"
-                  type="button"
-                  @click="toggleRoom(room)"
-                  :class="['w-full text-left rounded px-2.5 py-1.5 border transition cursor-pointer', isRoomSelected(room) ? 'bg-cyan-500/15 border-cyan-400/40' : 'bg-[#051330]/50 border-cyan-500/10 hover:bg-cyan-500/10']"
+                  :class="['flex items-start gap-1.5 rounded px-2 py-1.5 border transition', isRoomSelected(room) ? 'bg-cyan-500/15 border-cyan-400/40' : 'bg-[#051330]/50 border-cyan-500/10']"
                 >
+                  <el-checkbox
+                    :model-value="isExportRoomSelected(room)"
+                    @change="() => toggleExportRoom(room)"
+                    class="mt-0.5 shrink-0"
+                  />
+                  <button
+                    type="button"
+                    @click="toggleRoom(room)"
+                    class="flex-1 min-w-0 text-left cursor-pointer"
+                  >
                   <div class="flex items-center justify-between text-sm">
                     <div class="flex items-center gap-1.5 min-w-0">
                       <span v-if="room.zone" class="text-xs px-1 py-0.5 rounded bg-cyan-500/10 text-cyan-300 whitespace-nowrap shrink-0">{{ shortZone(room.zone) }}</span>
@@ -148,6 +172,7 @@
                     <span v-if="room.annualProperty != null">年物业费 <span class="text-emerald-400/90 font-mono">{{ fmt(room.annualProperty) }}</span></span>
                   </div>
                 </button>
+                </div>
               </div>
             </template>
 
@@ -193,21 +218,51 @@
                 class="mb-2"
               />
 
-              <div class="text-sm text-slate-400 mb-1">入住企业（{{ hoveredBuilding.enterprises.length }}）<span class="text-slate-500">· 点击查看详情</span></div>
+              <div class="text-sm text-slate-400 mb-1 flex items-center justify-between gap-1">
+                <span>入住企业（{{ hoveredBuilding.enterprises.length }}）</span>
+                <button type="button" @click="toggleSelectAll" class="text-xs text-cyan-300 hover:text-cyan-200 transition cursor-pointer shrink-0">{{ allSelected ? '清空' : '全选' }}</button>
+              </div>
+
               <div v-if="hoveredBuilding.enterprises.length" class="space-y-1">
-                <button
+                <div
                   v-for="e in hoveredBuilding.enterprises"
                   :key="e"
-                  @click="openEnterprise(e)"
-                  class="w-full text-left text-sm text-slate-200 bg-[#051330]/40 rounded px-2 py-1.5 leading-snug cursor-pointer hover:bg-cyan-500/15 hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
+                  class="flex items-center gap-1.5 bg-[#051330]/40 rounded px-2 py-1.5"
                 >
-                  <span class="truncate">{{ e }}</span>
-                  <ChevronRight class="w-4 h-4 text-slate-500 shrink-0" />
-                </button>
+                  <el-checkbox :model-value="selectedExportEnterprises.includes(e)" @change="() => toggleEnterprise(e)" />
+                  <button
+                    type="button"
+                    @click="openEnterprise(e)"
+                    class="flex-1 min-w-0 text-left text-sm text-slate-200 leading-snug cursor-pointer hover:text-cyan-200 transition flex items-center justify-between gap-1.5"
+                  >
+                    <span class="truncate">{{ e }}</span>
+                    <ChevronRight class="w-4 h-4 text-slate-500 shrink-0" />
+                  </button>
+                </div>
               </div>
               <div v-else class="text-sm text-slate-500 text-center py-2">暂无入住企业</div>
+
+              <!-- 时间范围 + 导出所选企业 -->
+              <div class="flex items-center gap-2 mt-2">
+                <el-select v-model="exportStartMonth" class="export-month-select shrink-0" popper-class="export-month-popper">
+                  <el-option v-for="o in monthOptions" :key="o.key" :label="o.label" :value="o.key" />
+                </el-select>
+                <span class="text-sm text-slate-500 shrink-0">至</span>
+                <el-select v-model="exportEndMonth" class="export-month-select shrink-0" popper-class="export-month-popper">
+                  <el-option v-for="o in monthOptions" :key="o.key" :label="o.label" :value="o.key" />
+                </el-select>
+                <button
+                  type="button"
+                  @click="handleExportSelected"
+                  class="ml-auto flex items-center gap-1 text-sm text-cyan-300 hover:text-cyan-200 border border-cyan-500/30 rounded px-2.5 py-1 cursor-pointer transition shrink-0"
+                >
+                  <Download class="w-4 h-4" /> 导出
+                </button>
+              </div>
             </template>
           </div>
+          </div>
+        </div>
         </div>
       </div>
     </Transition>
@@ -342,7 +397,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
-import { MapPin, X, BarChart3, ChevronDown, ChevronUp, Search, ChevronRight, ChevronLeft, Download } from 'lucide-vue-next'
+import { MapPin, X, BarChart3, ChevronDown, ChevronUp, Search, ChevronRight, ChevronLeft, Download, Maximize2, Minimize2 } from 'lucide-vue-next'
 import TechLineChart from '../charts/TechLineChart.vue'
 import UtilityEnergyPanel from './UtilityEnergyPanel.vue'
 import { mapMarkers, markerToLngLat, statusColors } from '../../data/mapData'
@@ -351,6 +406,8 @@ import { parks } from '../../data/parkKml'
 import { propertyRooms, type PropertyRoom } from '../../data/propertyResources'
 import { getBuildingEnergy, getEnterpriseEnergy, getRoomEnergy, latestEnergyMonth } from '../../data/buildingEnergy'
 import { getEnterpriseContact } from '../../data/enterpriseContacts'
+import { monthOptions } from '../../data/parkMonitor'
+import { downloadExcel } from '../../utils/exportExcel'
 import type { MapMarker as MapMarkerData, MarkerType } from '../../data/mapData'
 
 // ===== 楼栋房产资源统计（数据来源：房产资源导入模板_已填写.xlsx 清洗后） =====
@@ -500,6 +557,32 @@ const dataTimestamp = ref('')
 
 // ===== 楼栋悬停统计 + 企业检索/详情（全部整合在悬浮面板内，不另弹窗） =====
 const hoveredBuilding = ref<BuildingStats | null>(null)
+// 楼栋悬浮面板是否放大（点击面板标题栏「放大/还原」切换）
+const buildingMaximized = ref(false)
+// 楼栋悬浮面板拖拽位移（标题栏可拖拽移动面板）
+const buildingDrag = ref({ x: 0, y: 0 })
+let buildingDragState: { x: number; y: number; px: number; py: number } | null = null
+
+function startBuildingDrag(e: MouseEvent) {
+  buildingDragState = { x: e.clientX, y: e.clientY, px: buildingDrag.value.x, py: buildingDrag.value.y }
+  document.addEventListener('mousemove', onBuildingDrag)
+  document.addEventListener('mouseup', endBuildingDrag)
+}
+
+function onBuildingDrag(e: MouseEvent) {
+  if (!buildingDragState) return
+  buildingDrag.value = {
+    x: buildingDragState.px + (e.clientX - buildingDragState.x),
+    y: buildingDragState.py + (e.clientY - buildingDragState.y),
+  }
+}
+
+function endBuildingDrag() {
+  buildingDragState = null
+  document.removeEventListener('mousemove', onBuildingDrag)
+  document.removeEventListener('mouseup', endBuildingDrag)
+}
+
 // 悬浮面板内：检索关键字
 const searchQuery = ref('')
 // 悬浮面板内：当前查看的企业详情（null = 列表视图）
@@ -558,6 +641,8 @@ function backToList() {
 const energyGranularity = ref<'month' | 'year'>('month')
 const energyPeriod = ref(latestEnergyMonth)
 const selectedRoom = ref<PropertyRoom | null>(null)
+// 企业详情导出：勾选要导出的房间（多选；未勾选则导出该企业全部厂房）
+const selectedExportRooms = ref<PropertyRoom[]>([])
 
 const buildingEnergy = computed(() => {
   const b = hoveredBuilding.value
@@ -592,24 +677,22 @@ const buildingRooms = computed<PropertyRoom[]>(() => {
   )
 })
 
-const enterpriseRooms = computed<PropertyRoom[]>(() => {
-  const e = panelEnterprise.value
-  if (!e) return []
-  return e.rooms.filter(r => r.resourceType === '厂房')
+// 企业视图导出：仅导出勾选的房间（未勾选时由 UtilityEnergyPanel 提示先勾选）
+const exportRooms = computed<PropertyRoom[]>(() => selectedExportRooms.value)
+
+// 切换企业 / 关闭面板时，重置选中的房间与导出勾选
+watch(panelEnterprise, () => {
+  selectedRoom.value = null
+  selectedExportRooms.value = []
 })
-
-// 企业视图导出：选中房间只导该房间，未选中导出该企业全部厂房
-const activeRooms = computed<PropertyRoom[]>(() =>
-  selectedRoom.value ? [selectedRoom.value] : enterpriseRooms.value,
-)
-
-// 切换企业 / 关闭面板时，重置选中的房间
-watch(panelEnterprise, () => { selectedRoom.value = null })
 
 function closeHoverPanel() {
   hoveredBuilding.value = null
   searchQuery.value = ''
   panelEnterprise.value = null
+  buildingMaximized.value = false
+  buildingDrag.value = { x: 0, y: 0 }
+  selectedExportEnterprises.value = []
 }
 
 // 供父组件在展开侧边面板（放大弹框）时调用：关闭地图上的楼栋悬浮面板与标记面板，避免两个图框同时显示
@@ -626,6 +709,62 @@ const store = useStore()
 watch(() => store.state.closeMapFloating, () => {
   closeFloatingPanels()
 })
+
+// ===== 楼栋企业导出：勾选企业 + 时间范围（起止月份） =====
+const selectedExportEnterprises = ref<string[]>([])
+const exportStartMonth = ref(monthOptions[0].key)
+const exportEndMonth = ref(monthOptions[monthOptions.length - 1].key)
+
+const allSelected = computed(() => {
+  const list = hoveredBuilding.value?.enterprises ?? []
+  return list.length > 0 && selectedExportEnterprises.value.length === list.length
+})
+
+function toggleEnterprise(name: string) {
+  const i = selectedExportEnterprises.value.indexOf(name)
+  if (i >= 0) selectedExportEnterprises.value.splice(i, 1)
+  else selectedExportEnterprises.value.push(name)
+}
+
+function toggleSelectAll() {
+  const list = hoveredBuilding.value?.enterprises ?? []
+  selectedExportEnterprises.value = allSelected.value ? [] : [...list]
+}
+
+function handleExportSelected() {
+  const names = selectedExportEnterprises.value
+  if (!names.length) {
+    store.commit('setToast', '请先勾选要导出的企业')
+    return
+  }
+  const months = monthOptions.filter(o => o.key >= exportStartMonth.value && o.key <= exportEndMonth.value)
+  if (!months.length) {
+    store.commit('setToast', '所选时间范围内暂无数据')
+    return
+  }
+  // 汇总口径：每家勾选企业 × 每个所选月份，导出一行「水/电/气总量 + 各类费用 + 总费用」
+  const rows: (string | number)[][] = []
+  for (const name of names) {
+    for (const m of months) {
+      const e = getEnterpriseEnergy(name, m.key)
+      const totalCost = e.water.cost + e.electricity.cost + e.gas.cost
+      rows.push([
+        name, m.label,
+        e.water.total, e.water.cost,
+        e.electricity.total, e.electricity.cost,
+        e.gas.total, e.gas.cost,
+        totalCost,
+      ])
+    }
+  }
+  const bname = hoveredBuilding.value?.mapName ?? '楼栋'
+  downloadExcel(
+    `楼栋企业用能汇总_${bname}_${exportStartMonth.value}_${exportEndMonth.value}`,
+    ['企业', '月份', '用水量（吨）', '水费（元）', '用电量（kWh）', '电费（元）', '用气量（m³）', '气费（元）', '总费用（元）'],
+    rows,
+  )
+  store.commit('setToast', `已导出 ${names.length} 家企业 ${months.length} 个月汇总`)
+}
 
 // 数字显示：整数不带小数，小数保留至多 2 位
 function fmt(n: number): string {
@@ -648,6 +787,26 @@ function toggleRoom(room: PropertyRoom) {
 
 function isRoomSelected(room: PropertyRoom): boolean {
   return selectedRoom.value === room
+}
+
+function toggleExportRoom(room: PropertyRoom) {
+  const i = selectedExportRooms.value.indexOf(room)
+  if (i >= 0) selectedExportRooms.value.splice(i, 1)
+  else selectedExportRooms.value.push(room)
+}
+
+function isExportRoomSelected(room: PropertyRoom): boolean {
+  return selectedExportRooms.value.includes(room)
+}
+
+const allRoomsSelected = computed<boolean>(() => {
+  const list = panelEnterprise.value?.rooms ?? []
+  return list.length > 0 && list.length === selectedExportRooms.value.length
+})
+
+function toggleSelectAllRooms() {
+  const list = panelEnterprise.value?.rooms ?? []
+  selectedExportRooms.value = allRoomsSelected.value ? [] : [...list]
 }
 
 // 园区短名：东部园区 -> 东部
@@ -746,6 +905,7 @@ function buildBuildings() {
       hoveredBuilding.value = getBuildingStats(b.name)
       searchQuery.value = ''
       panelEnterprise.value = null
+      selectedExportEnterprises.value = []
     })
     mk.setMap(map.value)
     buildingMarkerList.value.push(mk)
@@ -1173,6 +1333,39 @@ const legendLayers = computed(() =>
 .trend-date-select :deep(.el-select__caret) {
   color: #22d3ee !important;
 }
+
+/* 楼栋企业导出：月份范围下拉 + 企业勾选 */
+.export-month-select {
+  width: 128px !important;
+}
+.export-month-select :deep(.el-select__wrapper) {
+  background-color: #0b2152 !important;
+  border: 1px solid rgba(6, 182, 212, 0.35) !important;
+  box-shadow: none !important;
+  border-radius: 4px;
+  height: 28px !important;
+  min-height: 28px !important;
+}
+.export-month-select :deep(.el-select__selected-item),
+.export-month-select :deep(.el-select__placeholder) {
+  color: #22d3ee !important;
+  font-family: monospace;
+  font-size: 13px;
+}
+.export-month-select :deep(.el-select__caret) {
+  color: #22d3ee !important;
+}
+:deep(.el-checkbox__inner) {
+  background-color: rgba(5, 19, 48, 0.8);
+  border-color: rgba(6, 182, 212, 0.5);
+}
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+}
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner::after) {
+  border-color: #fff;
+}
 </style>
 
 <style>
@@ -1220,5 +1413,22 @@ const legendLayers = computed(() =>
   white-space: nowrap;
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* 楼栋企业导出：月份下拉面板深色主题（teleport 到 body） */
+.export-month-popper {
+  background-color: #0b2152 !important;
+  border: 1px solid rgba(6, 182, 212, 0.45) !important;
+}
+.export-month-popper .el-select-dropdown__item {
+  color: #cbd5e1;
+}
+.export-month-popper .el-select-dropdown__item.is-hovering {
+  background-color: rgba(0, 242, 255, 0.12);
+  color: #00f2ff;
+}
+.export-month-popper .el-select-dropdown__item.is-selected {
+  color: #00f2ff;
+  font-weight: 700;
 }
 </style>

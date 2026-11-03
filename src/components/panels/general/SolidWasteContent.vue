@@ -33,19 +33,22 @@
       </div>
     </div>
 
-    <!-- 三废量（固废 / 危废 / 废水） -->
+    <!-- 三废量（固废 / 危废 / 废水）：名称、数量、单位三行 -->
     <div class="grid grid-cols-3 gap-2 text-center">
       <div class="bg-gradient-to-b from-[#0a235c] to-[#041235] border border-cyan-500/20 rounded p-2.5">
         <span class="block text-sm text-slate-300 font-sans">固废量</span>
-        <span class="block font-black text-cyan-300 font-mono text-2xl mt-1">{{ wastes.solid }}</span>
+        <span class="block font-black text-cyan-300 font-mono text-2xl mt-1 leading-none">{{ wasteDisplay.solid.value }}</span>
+        <span class="block text-sm text-slate-300 mt-1">{{ wasteDisplay.solid.unit }}</span>
       </div>
       <div class="bg-gradient-to-b from-[#3b0d2a] to-[#1a0a18] border border-rose-500/20 rounded p-2.5">
         <span class="block text-sm text-slate-300 font-sans">危废量</span>
-        <span class="block font-black text-rose-300 font-mono text-2xl mt-1">{{ wastes.hazardous }}</span>
+        <span class="block font-black text-rose-300 font-mono text-2xl mt-1 leading-none">{{ wasteDisplay.hazardous.value }}</span>
+        <span class="block text-sm text-slate-300 mt-1">{{ wasteDisplay.hazardous.unit }}</span>
       </div>
       <div class="bg-gradient-to-b from-[#08283f] to-[#04172a] border border-sky-500/20 rounded p-2.5">
         <span class="block text-sm text-slate-300 font-sans">废水量</span>
-        <span class="block font-black text-sky-300 font-mono text-2xl mt-1">{{ wastes.wastewater }}</span>
+        <span class="block font-black text-sky-300 font-mono text-2xl mt-1 leading-none">{{ wasteDisplay.wastewater.value }}</span>
+        <span class="block text-sm text-slate-300 mt-1">{{ wasteDisplay.wastewater.unit }}</span>
       </div>
     </div>
 
@@ -75,7 +78,7 @@
         />
       </div>
 
-      <!-- 总量统计（按当前记录净重合计） -->
+      <!-- 总量统计（固废/废水按运输净重合计，危废按平台手动导入合计） -->
       <div class="grid grid-cols-3 gap-2 mb-1.5 text-center">
         <div class="bg-cyan-500/5 border border-cyan-500/15 rounded px-1 py-1">
           <span class="block text-[11px] text-slate-400">固废总量</span>
@@ -182,6 +185,18 @@ const wastes = computed(() => {
   return wasteYearData[selectedYear.value] || wasteYearData['2025']
 })
 
+// 拆分「数量 + 单位」字符串（如 "3000 吨"）用于三行展示
+function splitValueUnit(s: string): { value: string; unit: string } {
+  const m = s.trim().match(/^([\d.]+)\s*(.*)$/)
+  return m ? { value: m[1], unit: m[2] } : { value: s, unit: '' }
+}
+
+const wasteDisplay = computed(() => ({
+  solid: splitValueUnit(wastes.value.solid),
+  hazardous: splitValueUnit(wastes.value.hazardous),
+  wastewater: splitValueUnit(wastes.value.wastewater),
+}))
+
 // ===== 导出（自由选择具体日期范围，导出收运中转记录明细） =====
 const exportRange: [string, string] = ['2026-10-22', '2026-10-28']
 
@@ -213,9 +228,13 @@ function handleExport(start: string, end: string) {
     r.net,
     r.tareTime,
   ])
-  // 末尾追加总量统计行（净重合计）
+  // 危废总量：平台手动导入数据（非车辆运输），按日期范围合计
+  const hazardous = hazardousImports
+    .filter((i) => i.date >= start && i.date <= end)
+    .reduce((s, i) => s + i.amount, 0)
+  // 末尾追加总量统计行（固废/废水净重合计，危废为手动导入合计）
   rows.push(['', '', '', '固废总量', '', '', '', round2(sumNet('固废')), ''])
-  rows.push(['', '', '', '危废总量', '', '', '', round2(sumNet('危废')), ''])
+  rows.push(['', '', '', '危废总量', '', '', '', round2(hazardous), ''])
   rows.push(['', '', '', '废水总量', '', '', '', round2(sumNet('废水')), ''])
   downloadExcel(`固废处置监控_${start}_${end}`, headers, rows)
 }
@@ -225,7 +244,7 @@ function round2(n: number): number {
 }
 
 // 收运中转记录：点击车辆查询过磅详情（流水号/车牌号/毛重/皮重/净重/皮重时间）
-// 生成近 3 个月演示数据（2026-08-01 ~ 2026-10-28，每天固废/危废/废水各 1 条）
+// 生成近 3 个月演示数据（2026-08-01 ~ 2026-10-28，每天固废/废水各 1 条；危废为平台手动导入，不走收运）
 interface TransferRecord {
   serial: string
   plate: string
@@ -246,7 +265,6 @@ const transferRecords: TransferRecord[] = (() => {
   const endDay = new Date(2026, 9, 28) // 2026-10-28
   const catDefs = [
     { cat: '固废', hour: 9, netBase: 9, span: 5 },
-    { cat: '危废', hour: 11, netBase: 5, span: 4 },
     { cat: '废水', hour: 15, netBase: 22, span: 9 },
   ]
   const list: TransferRecord[] = []
@@ -286,8 +304,13 @@ const recordRange = ref<[string, string]>(['2026-10-22', '2026-10-28'])
 // 近7天固定范围
 const RECENT_RANGE: [string, string] = ['2026-10-22', '2026-10-28']
 
+// 当前生效的日期范围（近7天或自定义时间段）
+const activeRange = computed<[string, string]>(() =>
+  timeMode.value === 'recent' ? RECENT_RANGE : recordRange.value
+)
+
 const filteredRecords = computed(() => {
-  const [start, end] = timeMode.value === 'recent' ? RECENT_RANGE : recordRange.value
+  const [start, end] = activeRange.value
   const list = transferRecords.filter((r) => {
     const d = recordDate(r)
     return (!start || d >= start) && (!end || d <= end)
@@ -297,13 +320,33 @@ const filteredRecords = computed(() => {
   return list.filter((r) => r.plate.toLowerCase().includes(q) || r.serial.toLowerCase().includes(q))
 })
 
-// 固废/危废/废水总量：按当前记录（含搜索过滤）的净重合计
+// 危废手动导入数据（平台录入，非车辆运输）：生成近 3 个月每天一条
+const hazardousImports: { date: string; amount: number }[] = (() => {
+  const pads = (n: number) => String(n).padStart(2, '0')
+  const dayMs = 24 * 60 * 60 * 1000
+  const startDay = new Date(2026, 7, 1)
+  const endDay = new Date(2026, 9, 28)
+  const list: { date: string; amount: number }[] = []
+  for (let t = startDay.getTime(); t <= endDay.getTime(); t += dayMs) {
+    const d = new Date(t)
+    const dayIdx = Math.round((t - startDay.getTime()) / dayMs)
+    const date = `${d.getFullYear()}-${pads(d.getMonth() + 1)}-${pads(d.getDate())}`
+    list.push({ date, amount: +(1.5 + (dayIdx % 6) * 0.2).toFixed(2) })
+  }
+  return list
+})()
+
+// 固废/危废/废水总量：固废、废水按运输记录净重合计；危废按平台手动导入数据合计
 const wasteTotals = computed(() => {
-  const sum = (cat: string) =>
+  const [start, end] = activeRange.value
+  const sumNet = (cat: string) =>
     filteredRecords.value
       .filter((r) => r.category === cat)
       .reduce((s, r) => s + (parseFloat(r.net) || 0), 0)
-  return { solid: sum('固废'), hazardous: sum('危废'), wastewater: sum('废水') }
+  const hazardous = hazardousImports
+    .filter((i) => i.date >= start && i.date <= end)
+    .reduce((s, i) => s + i.amount, 0)
+  return { solid: sumNet('固废'), hazardous, wastewater: sumNet('废水') }
 })
 
 const expandedSerial = ref<string | null>(null)

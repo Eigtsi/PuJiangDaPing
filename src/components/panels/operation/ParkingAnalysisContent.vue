@@ -10,6 +10,7 @@
         <el-select v-model="selectedPeriod" size="small" class="custom-el-select shrink-0" popper-class="custom-el-select-popper">
           <el-option v-for="opt in periodOptions" :key="opt.key" :label="opt.label" :value="opt.key" />
         </el-select>
+        <ExportRangeButton title="停车分析" :default-range="exportRange" @export="handleExport" />
       </div>
     </div>
 
@@ -46,6 +47,22 @@
       </div>
     </div>
 
+    <!-- 办卡车辆数（年卡/季卡/月卡） -->
+    <div class="grid grid-cols-3 gap-1.5 text-center">
+      <div class="bg-[#051330]/40 rounded p-1.5 border border-amber-500/10">
+        <span class="block text-xs text-slate-400 font-semibold tracking-wide">年卡车辆数</span>
+        <span :class="[isLargeScreen ? 'text-lg' : 'text-xl', 'block mt-1 font-mono font-black text-amber-300 tabular-nums']">{{ cardVehicles.year }}<span class="ml-0.5 text-xs text-slate-400 font-sans font-medium">辆</span></span>
+      </div>
+      <div class="bg-[#051330]/40 rounded p-1.5 border border-cyan-500/10">
+        <span class="block text-xs text-slate-400 font-semibold tracking-wide">季卡车辆数</span>
+        <span :class="[isLargeScreen ? 'text-lg' : 'text-xl', 'block mt-1 font-mono font-black text-cyan-300 tabular-nums']">{{ cardVehicles.quarter }}<span class="ml-0.5 text-xs text-slate-400 font-sans font-medium">辆</span></span>
+      </div>
+      <div class="bg-[#051330]/40 rounded p-1.5 border border-emerald-500/10">
+        <span class="block text-xs text-slate-400 font-semibold tracking-wide">月卡车辆数</span>
+        <span :class="[isLargeScreen ? 'text-lg' : 'text-xl', 'block mt-1 font-mono font-black text-emerald-400 tabular-nums']">{{ cardVehicles.month }}<span class="ml-0.5 text-xs text-slate-400 font-sans font-medium">辆</span></span>
+      </div>
+    </div>
+
     <div class="flex items-center gap-1.5 mb-1">
       <span class="w-[3px] h-3.5 rounded-full bg-cyan-400/80"></span>
       <span class="text-sm text-slate-300 font-semibold tracking-wide">{{ chartTitle }}</span>
@@ -60,6 +77,8 @@ import { computed, ref } from 'vue'
 import TechLineChart from '../../charts/TechLineChart.vue'
 import TechBarChart from '../../charts/TechBarChart.vue'
 import { yearFinancialProfiles, yearOptions, type FiscalYear } from '../../../data/financials'
+import ExportRangeButton from '../../shared/ExportRangeButton.vue'
+import { downloadExcel } from '../../../utils/exportExcel'
 
 defineProps<{
   isLargeScreen?: boolean
@@ -103,6 +122,13 @@ const totalSpaces = computed(() => profile.value.parking.totalSpaces)
 const occupiedSpaces = computed(() => profile.value.parking.occupiedSpaces)
 const occupancyRate = computed(() => ((occupiedSpaces.value / totalSpaces.value) * 100).toFixed(1))
 
+// 办卡车辆数（年卡/季卡/月卡）
+const cardVehicles = computed(() => ({
+  year: profile.value.parking.yearCardVehicles,
+  quarter: profile.value.parking.quarterCardVehicles,
+  month: profile.value.parking.monthCardVehicles,
+}))
+
 // 本月停车费收入（万元）/ 年停车费收入
 const monthParking = computed(() => profile.value.monthlyParking[Number(selectedMonth.value)] ?? 0)
 const parkingRevenue = computed(() => granularity.value === 'month' ? monthParking.value : totalParking.value)
@@ -136,4 +162,38 @@ const yAxis = computed(() => granularity.value === 'month'
   ? { min: 0, max: 5, interval: 2.5 }
   : { min: 0, max: 50, interval: 25 }
 )
+
+// ===== 导出（自由选择月份范围，导出停车费与办卡车辆数） =====
+const exportRange: [string, string] = ['2025-01', '2026-10']
+
+function monthsBetween(start: string, end: string): string[] {
+  const [sy, sm] = start.split('-').map(Number)
+  const [ey, em] = end.split('-').map(Number)
+  const result: string[] = []
+  let y = sy
+  let m = sm
+  while (y < ey || (y === ey && m <= em)) {
+    result.push(`${y}-${String(m).padStart(2, '0')}`)
+    m += 1
+    if (m > 12) { m = 1; y += 1 }
+  }
+  return result
+}
+
+function handleExport(start: string, end: string) {
+  const headers = ['月份', '停车费（万元）', '年卡车辆数', '季卡车辆数', '月卡车辆数']
+  const rows = monthsBetween(start, end).map((month) => {
+    const [y, m] = month.split('-').map(Number)
+    const profile = yearFinancialProfiles[String(y) as FiscalYear]
+    if (!profile) return [month, 0, 0, 0, 0]
+    return [
+      month,
+      profile.monthlyParking[m - 1] ?? 0,
+      profile.parking.yearCardVehicles,
+      profile.parking.quarterCardVehicles,
+      profile.parking.monthCardVehicles,
+    ]
+  })
+  downloadExcel(`停车分析_${start}_${end}`, headers, rows)
+}
 </script>

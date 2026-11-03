@@ -342,7 +342,13 @@ export interface YearFinancialProfile {
   zones: YearZoneRevenue[]
   rentByType: AssetTypeRent[]                    // 年租金按标的物类型构成
   propertyByType: AssetTypeProperty[]            // 年物业费按标的物类型构成
-  parking: { totalSpaces: number; occupiedSpaces: number }
+  parking: {
+    totalSpaces: number
+    occupiedSpaces: number
+    yearCardVehicles: number      // 年卡车辆数
+    quarterCardVehicles: number   // 季卡车辆数
+    monthCardVehicles: number     // 月卡车辆数
+  }
   monthlyParking: number[]                       // 12 个月停车费（万元）
 }
 
@@ -370,7 +376,7 @@ export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
       { type: '宿舍楼', property: 47.5 },
       { type: '营业房', property: 21.3 }
     ],
-    parking: { totalSpaces: 1200, occupiedSpaces: 835 },
+    parking: { totalSpaces: 1200, occupiedSpaces: 835, yearCardVehicles: 96, quarterCardVehicles: 172, monthCardVehicles: 238 },
     monthlyParking: [3.0, 2.7, 3.3, 3.6, 3.8, 4.0, 4.2, 4.1, 3.7, 3.5, 3.2, 3.6]
   },
   '2025': {
@@ -396,7 +402,7 @@ export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
       { type: '宿舍楼', property: 50.0 },
       { type: '营业房', property: 22.4 }
     ],
-    parking: { totalSpaces: 1260, occupiedSpaces: 897 },
+    parking: { totalSpaces: 1260, occupiedSpaces: 897, yearCardVehicles: 120, quarterCardVehicles: 210, monthCardVehicles: 280 },
     monthlyParking: [3.2, 2.8, 3.5, 3.8, 4.0, 4.2, 4.5, 4.3, 3.9, 3.7, 3.4, 3.7]
   },
   '2026': {
@@ -422,7 +428,7 @@ export const yearFinancialProfiles: Record<FiscalYear, YearFinancialProfile> = {
       { type: '宿舍楼', property: 52.0 },
       { type: '营业房', property: 23.4 }
     ],
-    parking: { totalSpaces: 1380, occupiedSpaces: 1010 },
+    parking: { totalSpaces: 1380, occupiedSpaces: 1010, yearCardVehicles: 138, quarterCardVehicles: 235, monthCardVehicles: 305 },
     monthlyParking: [3.4, 3.0, 3.7, 4.0, 4.2, 4.4, 4.7, 4.5, 4.1, 3.9, 3.6, 3.9]
   }
 }

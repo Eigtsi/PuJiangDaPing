@@ -2,7 +2,7 @@
   <div class="sticky top-0 z-10 -mx-3 px-3 py-1.5 bg-[#09224f]/60 backdrop-blur-xl rounded-md">
     <!-- 标题 + 月/年切换 + 周期筛选 + 导出 -->
     <div class="flex items-center justify-between mb-1.5">
-      <span class="text-sm text-cyan-300 font-bold">水电气</span>
+      <span class="text-sm text-cyan-300 font-bold">用能详情</span>
       <div class="flex items-center gap-1">
         <div class="flex items-center rounded border border-cyan-500/30 p-0.5 shrink-0">
           <button
@@ -103,6 +103,8 @@ interface Props {
   entityName: string
   /** 导出时按「每个厂房房间」逐行明细；不传则导出当前汇总 */
   rooms?: PropertyRoom[]
+  /** 勾选导出模式：未勾选任何房间时禁止导出并提示 */
+  requireRooms?: boolean
 }
 
 const props = defineProps<Props>()
@@ -110,6 +112,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'update:period', period: string): void
   (e: 'update:granularity', g: 'month' | 'year'): void
+  (e: 'toast', msg: string): void
 }>()
 
 const periodOptions = computed(() => (props.granularity === 'month' ? monthOptions : yearOptions))
@@ -140,7 +143,13 @@ function roomName(r: PropertyRoom): string {
 }
 
 function handleExport() {
-  const filename = `${props.entityName}_水电气_${periodLabel.value}`
+  // 勾选导出模式：未勾选任何房间时禁止导出，提示先勾选
+  if (props.requireRooms && (!props.rooms || !props.rooms.length)) {
+    emit('toast', '请先勾选要导出的房间')
+    return
+  }
+
+  const filename = `${props.entityName}_用能详情_${periodLabel.value}`
   const rooms = props.rooms && props.rooms.length ? props.rooms : null
 
   if (rooms) {

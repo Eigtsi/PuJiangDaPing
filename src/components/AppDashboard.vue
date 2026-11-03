@@ -139,25 +139,46 @@
       </div>
     </nav>
 
-    <!-- ============ 面板「展开」详情弹框（点击面板右上角放大按钮，以弹框形式展示全量内容，参照「一企一档」） ============ -->
+    <!-- ============ 面板「展开」详情弹框（可拖拽移动 + zoom 等比放大，参照「一企一档」） ============ -->
     <div
       v-if="expandedIndex !== null"
-      class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+      class="fixed inset-0 z-50 pointer-events-none"
     >
-      <div class="pointer-events-auto tech-panel w-[475px] max-w-[90vw] flex flex-col border border-cyan-400 shadow-[0_8px_40px_rgba(6,182,212,0.5)]">
-        <span class="hud-corner hud-corner-tr" />
-        <span class="hud-corner hud-corner-bl" />
-        <div class="flex items-center justify-between px-5 py-3 border-b border-cyan-500/25 shrink-0">
-          <span class="text-lg font-bold text-white flex items-center gap-2.5 tracking-wider">
-            <component :is="panelIcons[expandedIndex]" class="w-5 h-5 text-neon-blue" />
-            {{ panelTitles[expandedIndex] }}
-          </span>
-          <button @click="expandedIndex = null" class="text-white/50 hover:text-white hover:bg-white/10 p-1.5 rounded transition">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-        <div class="p-5">
-          <component :is="panelComponents[expandedIndex]" :isLargeScreen="false" @toast="toastMessage" />
+      <div
+        class="absolute left-1/2 top-1/2 pointer-events-auto"
+        :style="{ transform: `translate(-50%, -50%) translate(${dragPos.x}px, ${dragPos.y}px)` }"
+      >
+        <div :style="{ zoom: expandedMaximized ? 1.6 : 1 }">
+          <div class="tech-panel w-[475px] max-w-[90vw] flex flex-col border border-cyan-400 shadow-[0_8px_40px_rgba(6,182,212,0.5)]">
+            <span class="hud-corner hud-corner-tr" />
+            <span class="hud-corner hud-corner-bl" />
+            <div
+              class="flex items-center justify-between px-5 py-3 border-b border-cyan-500/25 shrink-0 cursor-move select-none"
+              @mousedown="startDrag"
+            >
+              <span class="text-lg font-bold text-white flex items-center gap-2.5 tracking-wider">
+                <component :is="panelIcons[expandedIndex]" class="w-5 h-5 text-neon-blue" />
+                {{ panelTitles[expandedIndex] }}
+              </span>
+              <div class="flex items-center gap-1 shrink-0" @mousedown.stop>
+                <button
+                  @click="expandedMaximized = !expandedMaximized"
+                  class="text-white/50 hover:text-white hover:bg-white/10 p-1.5 rounded transition"
+                  :title="expandedMaximized ? '还原' : '放大'"
+                >
+                  <Minimize2 v-if="expandedMaximized" class="w-5 h-5" />
+                  <Maximize2 v-else class="w-5 h-5" />
+                </button>
+                <button @click="closeExpanded" class="text-white/50 hover:text-white hover:bg-white/10 p-1.5 rounded transition">
+                  <X class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <!-- 内容区限高：默认 70vh；放大后视觉约 88vh，内容超出可滚动下滑 -->
+            <div class="p-5 overflow-y-auto no-scrollbar" :style="{ maxHeight: expandedMaximized ? 'calc(88vh / 1.6)' : '70vh' }">
+              <component :is="panelComponents[expandedIndex]" :isLargeScreen="false" @toast="toastMessage" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -181,7 +202,8 @@ import {
   Building, Droplets, Wind, Calendar, Sun, ArrowLeftRight,
   Trash2, Sliders, Shield, LayoutDashboard,
   Coins, Car, X,
-  Zap, Flame, Waves, BatteryCharging
+  Zap, Flame, Waves, BatteryCharging, Recycle,
+  Maximize2, Minimize2
 } from 'lucide-vue-next'
 
 import TechPanel from './TechPanel.vue'
@@ -205,6 +227,8 @@ import RentAnalysisContent from './panels/operation/RentAnalysisContent.vue'
 import ParkingAnalysisContent from './panels/operation/ParkingAnalysisContent.vue'
 import SolarPowerContent from './panels/operation/SolarPowerContent.vue'
 import EnergyStorageContent from './panels/operation/EnergyStorageContent.vue'
+// ===== Panel imports — Environment =====
+import WasteResidueContent from './panels/environment/WasteResidueContent.vue'
 
 // ==================== ASSETS ====================
 const industrialParkView = '/src/assets/images/industrial_park_view_1779843805340.png'
@@ -335,6 +359,7 @@ const panelDefs = computed(() => {
       [
         hasAir ? { title: '大气环境监测', icon: Wind, comp: AirMonitorContent } : null,
         hasOutlet ? { title: '水环境监测', icon: Droplets, comp: WaterEnvContent } : null,
+        { title: '废渣处置', icon: Recycle, comp: WasteResidueContent },
       ],
       [
         { title: '固废处置监管', icon: Trash2, comp: SolidWasteContent },
@@ -369,11 +394,45 @@ const rightPanelClass = computed(() =>
 
 // 展开的面板索引（null = 未展开），点击面板右上角放大按钮弹出全量内容
 const expandedIndex = ref<number | null>(null)
+// 展开弹框是否最大化（点击弹框右上角「放大/还原」切换）
+const expandedMaximized = ref(false)
 const mapRef = ref<InstanceType<typeof InteractiveMap> | null>(null)
+
+// ===== 展开弹框拖拽移动 =====
+const dragPos = ref({ x: 0, y: 0 })
+let dragState: { x: number; y: number; px: number; py: number } | null = null
+
+function startDrag(e: MouseEvent) {
+  dragState = { x: e.clientX, y: e.clientY, px: dragPos.value.x, py: dragPos.value.y }
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', endDrag)
+}
+
+function onDrag(e: MouseEvent) {
+  if (!dragState) return
+  dragPos.value = {
+    x: dragState.px + (e.clientX - dragState.x),
+    y: dragState.py + (e.clientY - dragState.y),
+  }
+}
+
+function endDrag() {
+  dragState = null
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', endDrag)
+}
+
+function closeExpanded() {
+  expandedIndex.value = null
+  expandedMaximized.value = false
+  dragPos.value = { x: 0, y: 0 }
+}
 
 // 点击放大按钮：先关闭地图上的悬浮面板，再弹出全量内容，避免两个图框同时显示
 function handleExpand(index: number) {
   mapRef.value?.closeFloatingPanels()
+  expandedMaximized.value = false
+  dragPos.value = { x: 0, y: 0 }
   expandedIndex.value = index
 }
 

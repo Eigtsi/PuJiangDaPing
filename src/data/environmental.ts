@@ -403,6 +403,31 @@ export const alertEvents: AlertEvent[] = [
   }
 ]
 
+// ========== 废渣处置（一年一次统计） ==========
+
+/** 废渣处置分档（按核定设备数分档收费，一年一次统计） */
+export interface ResidueTier {
+  tier: string              // 档位
+  price: number             // 对应价格（元/年/台）
+  enterpriseCount: number   // 核定企业数
+  deviceCount: number       // 核定设备数（台）
+  amount: number            // 缴费金额（元）= 核定设备数 × 对应价格
+}
+
+// 可选统计年度（当前仅有 2025 年度数据）
+export const residueYears: string[] = ['2025']
+
+// 废渣处置分档统计（按年度，5档，价格递减、五档免缴）
+export const residueYearTiers: Record<string, ResidueTier[]> = {
+  '2025': [
+    { tier: '一档', price: 210, enterpriseCount: 5, deviceCount: 8, amount: 1680 },
+    { tier: '二档', price: 120, enterpriseCount: 4, deviceCount: 14, amount: 1680 },
+    { tier: '三档', price: 50, enterpriseCount: 3, deviceCount: 17, amount: 850 },
+    { tier: '四档', price: 20, enterpriseCount: 3, deviceCount: 25, amount: 500 },
+    { tier: '五档', price: 0, enterpriseCount: 2, deviceCount: 28, amount: 0 },
+  ],
+}
+
 // ========== 工具函数 ==========
 
 /** 按预警类型筛选 */
