@@ -19,6 +19,12 @@ export interface MonitorIndicator {
   level: IndicatorLevel
 }
 
+/** 单个监测点位（大气监测站：点位1/点位2） */
+export interface MonitorStation {
+  name: string              // 点位名称：点位1 / 点位2
+  indicators: MonitorIndicator[]
+}
+
 /** 构成占比（饼图用） */
 export interface SourceSplit {
   name: string
@@ -50,8 +56,7 @@ export interface ParkProfile {
     complianceRate: number // 综合达标率 %
     alertCount: number     // 超标预警 次
     riskFactor: string     // 重点风险因子
-    stationCount: number   // 监测点位 个
-    indicators: MonitorIndicator[]
+    stations: MonitorStation[] // 各监测点位
   }
   water: {
     complianceRate: number
@@ -105,15 +110,31 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
       complianceRate: 87.5,
       alertCount: 18,
       riskFactor: 'TVOC',
-      stationCount: 2,
-      indicators: [
-        { name: 'PM2.5', unit: 'μg/m³', value: 62, level: 'normal' },
-        { name: 'PM10', unit: 'μg/m³', value: 118, level: 'normal' },
-        { name: 'SO2', unit: 'μg/m³', value: 86, level: 'normal' },
-        { name: 'NO2', unit: 'μg/m³', value: 58, level: 'normal' },
-        { name: 'O3', unit: 'μg/m³', value: 142, level: 'normal' },
-        { name: 'TVOC', unit: 'mg/m³', value: 0.85, level: 'yellow' },
-        { name: '噪音', unit: 'dB', value: 55, level: 'normal' }
+      stations: [
+        {
+          name: '点位1',
+          indicators: [
+            { name: 'PM2.5', unit: 'μg/m³', value: 58, level: 'normal' },
+            { name: 'PM10', unit: 'μg/m³', value: 104, level: 'normal' },
+            { name: 'SO2', unit: 'μg/m³', value: 74, level: 'normal' },
+            { name: 'NO2', unit: 'μg/m³', value: 50, level: 'normal' },
+            { name: 'O3', unit: 'μg/m³', value: 136, level: 'normal' },
+            { name: 'TVOC', unit: 'mg/m³', value: 0.72, level: 'normal' },
+            { name: '噪音', unit: 'dB', value: 53, level: 'normal' }
+          ]
+        },
+        {
+          name: '点位2',
+          indicators: [
+            { name: 'PM2.5', unit: 'μg/m³', value: 66, level: 'normal' },
+            { name: 'PM10', unit: 'μg/m³', value: 132, level: 'normal' },
+            { name: 'SO2', unit: 'μg/m³', value: 98, level: 'normal' },
+            { name: 'NO2', unit: 'μg/m³', value: 66, level: 'normal' },
+            { name: 'O3', unit: 'μg/m³', value: 148, level: 'normal' },
+            { name: 'TVOC', unit: 'mg/m³', value: 0.98, level: 'yellow' },
+            { name: '噪音', unit: 'dB', value: 57, level: 'normal' }
+          ]
+        }
       ]
     },
     water: {
@@ -195,15 +216,31 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
       complianceRate: 90.2,
       alertCount: 12,
       riskFactor: 'PM2.5',
-      stationCount: 2,
-      indicators: [
-        { name: 'PM2.5', unit: 'μg/m³', value: 78, level: 'yellow' },
-        { name: 'PM10', unit: 'μg/m³', value: 96, level: 'normal' },
-        { name: 'SO2', unit: 'μg/m³', value: 64, level: 'normal' },
-        { name: 'NO2', unit: 'μg/m³', value: 42, level: 'normal' },
-        { name: 'O3', unit: 'μg/m³', value: 118, level: 'normal' },
-        { name: 'TVOC', unit: 'mg/m³', value: 0.48, level: 'normal' },
-        { name: '噪音', unit: 'dB', value: 52, level: 'normal' }
+      stations: [
+        {
+          name: '点位1',
+          indicators: [
+            { name: 'PM2.5', unit: 'μg/m³', value: 72, level: 'yellow' },
+            { name: 'PM10', unit: 'μg/m³', value: 88, level: 'normal' },
+            { name: 'SO2', unit: 'μg/m³', value: 58, level: 'normal' },
+            { name: 'NO2', unit: 'μg/m³', value: 38, level: 'normal' },
+            { name: 'O3', unit: 'μg/m³', value: 112, level: 'normal' },
+            { name: 'TVOC', unit: 'mg/m³', value: 0.42, level: 'normal' },
+            { name: '噪音', unit: 'dB', value: 50, level: 'normal' }
+          ]
+        },
+        {
+          name: '点位2',
+          indicators: [
+            { name: 'PM2.5', unit: 'μg/m³', value: 84, level: 'yellow' },
+            { name: 'PM10', unit: 'μg/m³', value: 104, level: 'normal' },
+            { name: 'SO2', unit: 'μg/m³', value: 70, level: 'normal' },
+            { name: 'NO2', unit: 'μg/m³', value: 46, level: 'normal' },
+            { name: 'O3', unit: 'μg/m³', value: 124, level: 'normal' },
+            { name: 'TVOC', unit: 'mg/m³', value: 0.54, level: 'normal' },
+            { name: '噪音', unit: 'dB', value: 54, level: 'normal' }
+          ]
+        }
       ]
     },
     water: {
@@ -285,15 +322,31 @@ export const parkProfiles: Record<ParkKey, ParkProfile> = {
       complianceRate: 84.6,
       alertCount: 22,
       riskFactor: 'TVOC',
-      stationCount: 2,
-      indicators: [
-        { name: 'PM2.5', unit: 'μg/m³', value: 70, level: 'normal' },
-        { name: 'PM10', unit: 'μg/m³', value: 142, level: 'yellow' },
-        { name: 'SO2', unit: 'μg/m³', value: 158, level: 'yellow' },
-        { name: 'NO2', unit: 'μg/m³', value: 66, level: 'normal' },
-        { name: 'O3', unit: 'μg/m³', value: 152, level: 'yellow' },
-        { name: 'TVOC', unit: 'mg/m³', value: 0.92, level: 'yellow' },
-        { name: '噪音', unit: 'dB', value: 61, level: 'yellow' }
+      stations: [
+        {
+          name: '点位1',
+          indicators: [
+            { name: 'PM2.5', unit: 'μg/m³', value: 66, level: 'normal' },
+            { name: 'PM10', unit: 'μg/m³', value: 132, level: 'normal' },
+            { name: 'SO2', unit: 'μg/m³', value: 146, level: 'yellow' },
+            { name: 'NO2', unit: 'μg/m³', value: 60, level: 'normal' },
+            { name: 'O3', unit: 'μg/m³', value: 144, level: 'normal' },
+            { name: 'TVOC', unit: 'mg/m³', value: 0.86, level: 'yellow' },
+            { name: '噪音', unit: 'dB', value: 58, level: 'normal' }
+          ]
+        },
+        {
+          name: '点位2',
+          indicators: [
+            { name: 'PM2.5', unit: 'μg/m³', value: 74, level: 'normal' },
+            { name: 'PM10', unit: 'μg/m³', value: 152, level: 'yellow' },
+            { name: 'SO2', unit: 'μg/m³', value: 170, level: 'yellow' },
+            { name: 'NO2', unit: 'μg/m³', value: 72, level: 'normal' },
+            { name: 'O3', unit: 'μg/m³', value: 160, level: 'yellow' },
+            { name: 'TVOC', unit: 'mg/m³', value: 0.98, level: 'yellow' },
+            { name: '噪音', unit: 'dB', value: 64, level: 'yellow' }
+          ]
+        }
       ]
     },
     water: {
