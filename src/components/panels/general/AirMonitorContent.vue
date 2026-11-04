@@ -43,11 +43,9 @@
           {{ ind.value }}<span v-if="ind.unit" :class="['text-slate-300 ml-1', isLargeScreen ? 'text-xs' : 'text-sm']">{{ ind.unit }}</span>
         </span>
       </div>
-      <div :class="['rounded bg-cyan-950/20 border border-cyan-500/10 flex justify-between items-center', isLargeScreen ? 'px-2 py-0.5' : 'px-2.5 py-1']">
-        <span :class="['font-bold text-slate-200 whitespace-nowrap shrink-0', isLargeScreen ? 'text-xs' : 'text-sm']">监测点位</span>
-        <el-select v-model="selectedStation" size="small" class="custom-el-select station-select shrink-0" popper-class="custom-el-select-popper">
-          <el-option v-for="(s, i) in profile.air.stations" :key="s.name" :label="s.name" :value="i" />
-        </el-select>
+      <div v-if="profile.air.stationCount > 0" :class="['rounded bg-cyan-950/20 border border-cyan-500/10 flex justify-between items-center', isLargeScreen ? 'px-2 py-0.5' : 'px-2.5 py-1']">
+        <span :class="['font-bold text-slate-200', isLargeScreen ? 'text-xs' : 'text-sm']">监测点位</span>
+        <span :class="['font-mono font-black text-cyan-300', isLargeScreen ? 'text-base' : 'text-lg']">{{ profile.air.stationCount }} 个</span>
       </div>
     </div>
   </div>
@@ -71,10 +69,6 @@ defineEmits<{
 const store = useStore()
 const activePark = computed(() => store.state.activePark as ParkKey)
 const profile = computed(() => parkProfiles[activePark.value])
-
-// 当前选中的监测点位（0 = 点位1，1 = 点位2）
-const selectedStation = ref(0)
-const currentStation = computed(() => profile.value.air.stations[selectedStation.value] ?? profile.value.air.stations[0])
 
 // 显示模式：实时数据 / 历史均值
 const mode = ref<'realtime' | 'avg'>('realtime')
@@ -100,7 +94,7 @@ function liveValue(base: number): number {
 // 历史均值：实时值 × 均值系数，保留 1 位小数
 const displayIndicators = computed(() => {
   void collectTick.value
-  return currentStation.value.indicators.map(ind => ({
+  return profile.value.air.indicators.map(ind => ({
     ...ind,
     value: mode.value === 'realtime' ? liveValue(ind.value) : Math.round(ind.value * avgFactor.value * 10) / 10
   }))
@@ -141,9 +135,6 @@ function levelColor(level: IndicatorLevel): string {
 <style scoped>
 :deep(.custom-el-select) {
   width: 84px !important;
-}
-:deep(.custom-el-select.station-select) {
-  width: 68px !important;
 }
 :deep(.custom-el-select .el-select__wrapper) {
   background-color: #0b2152 !important;
