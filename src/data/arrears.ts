@@ -3,7 +3,7 @@
  * 字段：企业名称、房产资源、欠费种类、欠费月份、欠费金额、已读/未读
  */
 
-export type ArrearsFeeType = '水费' | '电费'
+export type ArrearsFeeType = '水费' | '电费' | '气费'
 
 export interface ArrearsRecord {
   id: string
@@ -26,6 +26,11 @@ export const arrearsRecords: ArrearsRecord[] = [
   { id: 'AR-006', enterpriseName: '恒通水晶原料精炼厂', property: 'D栋 4F-5F', feeType: '电费', month: '2025-10', amount: 28600, read: false },
   { id: 'AR-007', enterpriseName: '华光水晶建材有限公司', property: 'G栋 3F-4F', feeType: '电费', month: '2025-11', amount: 31800, read: true },
   { id: 'AR-008', enterpriseName: '浦江盛世水晶高档制品有限公司', property: 'H栋 1F-3F', feeType: '电费', month: '2025-10', amount: 39600, read: false },
+  // 气费欠费
+  { id: 'AR-009', enterpriseName: '华兴第一水晶工坊', property: 'A栋 2F', feeType: '气费', month: '2025-11', amount: 6800, read: false },
+  { id: 'AR-010', enterpriseName: '金华锦程水晶灯饰制造', property: 'C栋 2F-3F', feeType: '气费', month: '2025-10', amount: 5300, read: false },
+  { id: 'AR-011', enterpriseName: '华光水晶建材有限公司', property: 'G栋 3F-4F', feeType: '气费', month: '2025-11', amount: 9200, read: true },
+  { id: 'AR-012', enterpriseName: '浦江盛世水晶高档制品有限公司', property: 'H栋 1F-2F', feeType: '气费', month: '2025-09', amount: 7400, read: false },
 ]
 
 /** 按欠费种类筛选 */

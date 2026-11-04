@@ -103,8 +103,6 @@ interface Props {
   entityName: string
   /** 导出时按「每个厂房房间」逐行明细；不传则导出当前汇总 */
   rooms?: PropertyRoom[]
-  /** 勾选导出模式：未勾选任何房间时禁止导出并提示 */
-  requireRooms?: boolean
 }
 
 const props = defineProps<Props>()
@@ -143,12 +141,6 @@ function roomName(r: PropertyRoom): string {
 }
 
 function handleExport() {
-  // 勾选导出模式：未勾选任何房间时禁止导出，提示先勾选
-  if (props.requireRooms && (!props.rooms || !props.rooms.length)) {
-    emit('toast', '请先勾选要导出的房间')
-    return
-  }
-
   const filename = `${props.entityName}_用能详情_${periodLabel.value}`
   const rooms = props.rooms && props.rooms.length ? props.rooms : null
 

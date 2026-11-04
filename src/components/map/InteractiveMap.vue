@@ -129,16 +129,14 @@
                 :granularity="energyGranularity"
                 :entity-name="activeEntityName"
                 :rooms="exportRooms"
-                require-rooms
                 @toast="(msg) => store.commit('setToast', msg)"
                 v-model:period="energyPeriod"
                 v-model:granularity="energyGranularity"
                 class="mb-2.5"
               />
 
-              <div class="text-xs text-slate-400 mb-1.5 flex items-center justify-between gap-1">
-                <span>房间明细（{{ panelEnterprise.rooms.length }} 间）<span class="text-slate-500">· 勾选后导出、点击查看该房间</span></span>
-                <button type="button" @click="toggleSelectAllRooms" class="text-xs text-cyan-300 hover:text-cyan-200 transition cursor-pointer shrink-0">{{ allRoomsSelected ? '清空' : '全选' }}</button>
+              <div class="text-xs text-slate-400 mb-1.5">
+                <span>房间明细（{{ panelEnterprise.rooms.length }} 间）<span class="text-slate-500">· 点击查看该房间</span></span>
               </div>
               <div class="space-y-1.5">
                 <div
@@ -146,11 +144,6 @@
                   :key="i"
                   :class="['flex items-start gap-1.5 rounded px-2 py-1.5 border transition', isRoomSelected(room) ? 'bg-cyan-500/15 border-cyan-400/40' : 'bg-[#051330]/50 border-cyan-500/10']"
                 >
-                  <el-checkbox
-                    :model-value="isExportRoomSelected(room)"
-                    @change="() => toggleExportRoom(room)"
-                    class="mt-0.5 shrink-0"
-                  />
                   <button
                     type="button"
                     @click="toggleRoom(room)"
@@ -220,7 +213,7 @@
 
               <div class="text-sm text-slate-400 mb-1 flex items-center justify-between gap-1">
                 <span>入住企业（{{ hoveredBuilding.enterprises.length }}）</span>
-                <button type="button" @click="toggleSelectAll" class="text-xs text-cyan-300 hover:text-cyan-200 transition cursor-pointer shrink-0">{{ allSelected ? '清空' : '全选' }}</button>
+                <button v-if="isFactoryBuilding" type="button" @click="toggleSelectAll" class="text-xs text-cyan-300 hover:text-cyan-200 transition cursor-pointer shrink-0">{{ allSelected ? '清空' : '全选' }}</button>
               </div>
 
               <div v-if="hoveredBuilding.enterprises.length" class="space-y-1">
@@ -229,7 +222,7 @@
                   :key="e"
                   class="flex items-center gap-1.5 bg-[#051330]/40 rounded px-2 py-1.5"
                 >
-                  <el-checkbox :model-value="selectedExportEnterprises.includes(e)" @change="() => toggleEnterprise(e)" />
+                  <el-checkbox v-if="isFactoryBuilding" :model-value="selectedExportEnterprises.includes(e)" @change="() => toggleEnterprise(e)" />
                   <button
                     type="button"
                     @click="openEnterprise(e)"
@@ -242,8 +235,8 @@
               </div>
               <div v-else class="text-sm text-slate-500 text-center py-2">暂无入住企业</div>
 
-              <!-- 时间范围 + 导出所选企业 -->
-              <div class="flex items-center gap-2 mt-2">
+              <!-- 仅厂房楼栋：时间范围 + 导出所选企业 -->
+              <div v-if="isFactoryBuilding" class="flex items-center gap-2 mt-2">
                 <el-select v-model="exportStartMonth" class="export-month-select shrink-0" popper-class="export-month-popper">
                   <el-option v-for="o in monthOptions" :key="o.key" :label="o.label" :value="o.key" />
                 </el-select>
@@ -600,6 +593,7 @@ interface EnterpriseResult {
 }
 
 function buildEnterpriseResult(name: string): EnterpriseResult | null {
+  // 企业详情展示该企业租用的全部房间（厂房/宿舍楼/综合楼/营业房/仓库）
   const rooms = propertyRooms.filter(r => r.enterprise === name)
   if (!rooms.length) return null
   const { contact, phone } = getEnterpriseContact(name)
@@ -641,8 +635,6 @@ function backToList() {
 const energyGranularity = ref<'month' | 'year'>('month')
 const energyPeriod = ref(latestEnergyMonth)
 const selectedRoom = ref<PropertyRoom | null>(null)
-// 企业详情导出：勾选要导出的房间（多选；未勾选则导出该企业全部厂房）
-const selectedExportRooms = ref<PropertyRoom[]>([])
 
 const buildingEnergy = computed(() => {
   const b = hoveredBuilding.value
@@ -668,6 +660,9 @@ const activeEntityName = computed(() =>
   (selectedRoom.value && roomEnergy.value) ? roomFullLabel(selectedRoom.value) : (panelEnterprise.value?.name ?? ''),
 )
 
+// 是否厂房楼栋：仅厂房楼栋提供「勾选企业导出」；宿舍楼/综合楼/营业房/仓库只展示入住企业
+const isFactoryBuilding = computed(() => hoveredBuilding.value?.type === '厂房')
+
 // ===== 导出用：按「每一个厂房房间」明细 =====
 const buildingRooms = computed<PropertyRoom[]>(() => {
   const b = hoveredBuilding.value
@@ -677,13 +672,14 @@ const buildingRooms = computed<PropertyRoom[]>(() => {
   )
 })
 
-// 企业视图导出：仅导出勾选的房间（未勾选时由 UtilityEnergyPanel 提示先勾选）
-const exportRooms = computed<PropertyRoom[]>(() => selectedExportRooms.value)
+// 企业视图导出：导出该企业全部厂房（用能明细仅厂房有数据）
+const exportRooms = computed<PropertyRoom[]>(() =>
+  (panelEnterprise.value?.rooms ?? []).filter(r => r.resourceType === '厂房'),
+)
 
-// 切换企业 / 关闭面板时，重置选中的房间与导出勾选
+// 切换企业 / 关闭面板时，重置选中的房间
 watch(panelEnterprise, () => {
   selectedRoom.value = null
-  selectedExportRooms.value = []
 })
 
 function closeHoverPanel() {
@@ -787,26 +783,6 @@ function toggleRoom(room: PropertyRoom) {
 
 function isRoomSelected(room: PropertyRoom): boolean {
   return selectedRoom.value === room
-}
-
-function toggleExportRoom(room: PropertyRoom) {
-  const i = selectedExportRooms.value.indexOf(room)
-  if (i >= 0) selectedExportRooms.value.splice(i, 1)
-  else selectedExportRooms.value.push(room)
-}
-
-function isExportRoomSelected(room: PropertyRoom): boolean {
-  return selectedExportRooms.value.includes(room)
-}
-
-const allRoomsSelected = computed<boolean>(() => {
-  const list = panelEnterprise.value?.rooms ?? []
-  return list.length > 0 && list.length === selectedExportRooms.value.length
-})
-
-function toggleSelectAllRooms() {
-  const list = panelEnterprise.value?.rooms ?? []
-  selectedExportRooms.value = allRoomsSelected.value ? [] : [...list]
 }
 
 // 园区短名：东部园区 -> 东部
